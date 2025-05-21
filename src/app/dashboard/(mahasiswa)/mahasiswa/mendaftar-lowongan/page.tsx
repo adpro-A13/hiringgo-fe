@@ -17,7 +17,7 @@ export default function Mahasiswa(){
                     const response = await fetch("/api/lowongandaftar/list",
                         {
                             method: "GET", 
-                            headers: {"Authorization": `Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDc3MTgzMzgsImV4cCI6MTc0NzcyMTkzOH0.E7H7P188CJ3Jl2efNXTSBSnF1qMsNvZVEmK_eOmTaXc`,}
+                            headers: {"Authorization": `Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDc4NTQ2MTYsImV4cCI6MTc0Nzg1ODIxNn0.Ve1IMWfOXSI6PfUhpIWcVF0hTgmZCv28Y9vArEmFkSQ`,}
                         }
                     );
     

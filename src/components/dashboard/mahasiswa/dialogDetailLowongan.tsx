@@ -20,7 +20,7 @@ import { useState, useEffect } from "react";
 interface Lowongan {
   lowonganId: string;
   idMataKuliah: string;
-  mataKuliah: string;
+  namaMataKuliah: string;
   tahunAjaran: string;
   semester: string;
   statusLowongan: string;
@@ -129,7 +129,7 @@ export function DialogDetailLowongan({ lowongan, onApply, applicationStatus }: D
         }
 
         try {
-            const token = localStorage.getItem('authToken') || 'eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDc3MTgzMzgsImV4cCI6MTc0NzcyMTkzOH0.E7H7P188CJ3Jl2efNXTSBSnF1qMsNvZVEmK_eOmTaXc';
+            const token = localStorage.getItem('authToken') || 'eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDc4NTQ2MTYsImV4cCI6MTc0Nzg1ODIxNn0.Ve1IMWfOXSI6PfUhpIWcVF0hTgmZCv28Y9vArEmFkSQ';
             
             const response = await fetch(`/api/lowongandaftar/${lowongan.lowonganId}/daftar`, {
                 method: "POST",
@@ -221,7 +221,7 @@ export function DialogDetailLowongan({ lowongan, onApply, applicationStatus }: D
             <>
                 <DialogHeader>
                   <DialogTitle className="text-xl">
-                    {lowongan.judul || `${lowongan.idMataKuliah} - ${lowongan.mataKuliah}`}
+                    {lowongan.judul || `${lowongan.idMataKuliah} - ${lowongan.namaMataKuliah}`}
                   </DialogTitle>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <Badge variant={lowongan.statusLowongan === "DIBUKA" ? "default" : "secondary"}>
@@ -254,7 +254,7 @@ export function DialogDetailLowongan({ lowongan, onApply, applicationStatus }: D
                   <div className="flex items-center gap-2">
                     <BookOpen className="h-5 w-5 text-gray-500" />
                     <span className="font-medium">Mata Kuliah:</span> 
-                    <span>{lowongan.idMataKuliah} - {lowongan.mataKuliah}</span>
+                    <span>{lowongan.idMataKuliah} - {lowongan.namaMataKuliah}</span>
                   </div>
                   
                   <div className="flex items-center gap-2">
