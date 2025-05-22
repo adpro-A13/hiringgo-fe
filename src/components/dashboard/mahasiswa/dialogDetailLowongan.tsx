@@ -129,7 +129,7 @@ export function DialogDetailLowongan({ lowongan, onApply, applicationStatus }: D
         }
 
         try {
-            const token = localStorage.getItem('authToken') || 'eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDc4NTQ2MTYsImV4cCI6MTc0Nzg1ODIxNn0.Ve1IMWfOXSI6PfUhpIWcVF0hTgmZCv28Y9vArEmFkSQ';
+            const token = localStorage.getItem('authToken') || 'eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDc4OTMzMjQsImV4cCI6MTc0Nzg5NjkyNH0.ftGf5jCY0_21oRqIa6zCLVAT9FXrZHvkEAxvsy43IIQ';
             
             const response = await fetch(`/api/lowongandaftar/${lowongan.lowonganId}/daftar`, {
                 method: "POST",
