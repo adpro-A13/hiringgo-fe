@@ -45,10 +45,9 @@ export default function Admin(){
                     setIsLoading(true);
                     const response = await fetch("/api/dashboard/admin", {
                         method: "GET", 
-                        headers: {
-                            "Authorization": `Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJpZCI6IjMzNjJlY2MyLTgxNDEtNDMwYi05OTA3LTc3Mzc1NDY1MWM4ZCIsImVtYWlsIjoiYWRtaW5AaGlyaW5nZ28uY29tIiwic3ViIjoiYWRtaW5AaGlyaW5nZ28uY29tIiwiaWF0IjoxNzQ3NjYwNzg2LCJleHAiOjE3NDc2NjQzODZ9.yfdXLHMPi_CpK2rEF2Zyf9mAUM6KH4p2QBpZfxDl59A`,
-                            "Content-Type": "application/json"
-                        }
+                        headers: { "Content-Type": "application/json" ,
+                            "Authorization": `Bearer ${localStorage.getItem('token')}` // Pastikan token ada
+                        },
                     });
                     if (!response.ok) {
                         throw new Error(`HTTP error! Status: ${response.status}`);

@@ -50,10 +50,9 @@ export default function DosenDashboard() {
                 setIsLoading(true);
                 const response = await fetch("/api/dashboard/dosen", {
                     method: "GET", 
-                    headers: {
-                        "Authorization": `Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiRE9TRU4iLCJuaXAiOiIxMTEiLCJmdWxsTmFtZSI6ImRvc2VuMSIsImlkIjoiZDBjN2E4MjAtYjk1ZS00ODFkLTkyY2UtZjgyY2FkNTUyNzJhIiwiZW1haWwiOiJqYXdhQGdtYWlsLmNvbSIsInN1YiI6Imphd2FAZ21haWwuY29tIiwiaWF0IjoxNzQ3NjYyNDM5LCJleHAiOjE3NDc2NjYwMzl9.R9mS6XMPBPoHCLw7cFFPLxUK34XtRg_PPAYbdRuZBVc`,
-                        "Content-Type": "application/json"
-                    }
+                    headers: { "Content-Type": "application/json" ,
+                        "Authorization": `Bearer ${localStorage.getItem('token')}` // Pastikan token ada
+                    },
                 });
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);

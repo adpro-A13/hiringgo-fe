@@ -1,0 +1,134 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import AdminSidebar from "@/components/dashboard/dosen/sidebar"; // <-- Tambahkan sidebar
+
+export default function CreateLowonganPage() {
+  const router = useRouter();
+
+  const [form, setForm] = useState({
+    idMataKuliah: "",
+    tahunAjaran: "",
+    semester: "GANJIL",
+    jumlahAsdosDibutuhkan: 1,
+    statusLowongan: "DIBUKA",
+  });
+
+  const [error, setError] = useState<string | null>(null);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: name === "jumlahAsdosDibutuhkan" ? Number(value) : value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      const res = await fetch("http://localhost:8080/api/lowongan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(form),
+      });
+
+      if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(msg || `Error ${res.status}`);
+      }
+
+      router.push("/dashboard/dosen/manajemen-lowongan");
+    } catch (err: any) {
+      setError(err.message || "Terjadi kesalahan.");
+    }
+  };
+
+  return (
+    <AdminSidebar>
+      <div className="max-w-xl mx-auto mt-10 p-4 border rounded shadow">
+        <h1 className="text-2xl font-bold mb-4">Buat Lowongan Baru</h1>
+        {error && (
+          <p className="text-red-500 text-sm mb-4 bg-red-100 p-2 rounded">{error}</p>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="idMataKuliah" className="block font-semibold">ID Mata Kuliah</label>
+            <input
+              type="text"
+              name="idMataKuliah"
+              value={form.idMataKuliah}
+              onChange={handleChange}
+              required
+              className="w-full border p-2 rounded"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="tahunAjaran" className="block font-semibold">Tahun Ajaran</label>
+            <input
+              type="text"
+              name="tahunAjaran"
+              value={form.tahunAjaran}
+              onChange={handleChange}
+              placeholder="Contoh: 2024/2025"
+              required
+              className="w-full border p-2 rounded"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="semester" className="block font-semibold">Semester</label>
+            <select
+              name="semester"
+              value={form.semester}
+              onChange={handleChange}
+              className="w-full border p-2 rounded"
+            >
+              <option value="GANJIL">Ganjil</option>
+              <option value="GENAP">Genap</option>
+              <option value="PENDEK">Pendek</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="jumlahAsdosDibutuhkan" className="block font-semibold">Jumlah Asdos Dibutuhkan</label>
+            <input
+              type="number"
+              name="jumlahAsdosDibutuhkan"
+              min={1}
+              value={form.jumlahAsdosDibutuhkan}
+              onChange={handleChange}
+              required
+              className="w-full border p-2 rounded"
+            />
+          </div>
+
+          <div className="flex justify-between">
+            <button
+              type="button"
+              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+              onClick={() => router.push("/dashboard/dosen/manajemen-lowongan")}
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+            >
+              Buat Lowongan
+            </button>
+          </div>
+        </form>
+      </div>
+    </AdminSidebar>
+  );
+}
