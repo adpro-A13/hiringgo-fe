@@ -174,15 +174,74 @@ const LowonganDetailPage: React.FC = () => {
               <p><strong>Jumlah Asdos Pendaftar:</strong> {lowongan.jumlahAsdosPendaftar}</p>
 
               <h2 className="font-semibold mt-4">Daftar Pendaftaran (ID UUID):</h2>
-              {lowongan.idDaftarPendaftaran?.length > 0 ? (
-                <ul className="list-disc list-inside">
-                  {lowongan.idDaftarPendaftaran.map((id) => (
-                    <li key={id}>{id}</li>
-                  ))}
+                {lowongan.idDaftarPendaftaran?.length > 0 ? (
+                <ul className="list-disc list-inside space-y-2">
+                {lowongan.idDaftarPendaftaran.map((id) => (
+                  <li key={id} className="flex items-center justify-between border p-2 rounded">
+                    <span className="break-all">{id}</span>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`/api/lowongan/${lowongan.lowonganId}/terima/${id}`, {
+                              method: 'POST',
+                              headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                              },
+                            });
+
+                            if (!res.ok) {
+                              const text = await res.text();
+                              alert(`Gagal menerima pendaftar: ${text}`);
+                              return;
+                            }
+
+                            alert('Pendaftar berhasil diterima.');
+                            location.reload();
+                          } catch (err: any) {
+                            alert('Terjadi kesalahan: ' + err.message);
+                          }
+                        }}
+                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded"
+                      >
+                        Terima
+                      </button>
+
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`/api/lowongan/${lowongan.lowonganId}/tolak/${id}`, {
+                              method: 'POST',
+                              headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                              },
+                            });
+
+                            if (!res.ok) {
+                              const text = await res.text();
+                              alert(`Gagal menolak pendaftar: ${text}`);
+                              return;
+                            }
+
+                            alert('Pendaftar berhasil ditolak.');
+                            location.reload();
+                          } catch (err: any) {
+                            alert('Terjadi kesalahan: ' + err.message);
+                          }
+                        }}
+                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
+                      >
+                        Tolak
+                      </button>
+                    </div>
+                  </li>
+                ))}
+
                 </ul>
-              ) : (
+                ) : (
                 <p>Tidak ada pendaftaran.</p>
-              )}
+                )}
+
             </div>
           </div>
         )}

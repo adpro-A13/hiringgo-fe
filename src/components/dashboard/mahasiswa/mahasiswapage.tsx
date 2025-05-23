@@ -172,9 +172,9 @@ export default function MahasiswaPage({ dashboardData }: { dashboardData: Mahasi
       {/* Accepted Positions */}
       <div className="mb-8">
         <h3 className="text-xl font-semibold mb-4">Posisi Asisten Diterima</h3>
-        {dashboardData.acceptedLowongan.length > 0 ? (
+        {dashboardData.acceptedLowongan?.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {dashboardData.acceptedLowongan.map((position, index) => (
+            {dashboardData.acceptedLowongan?.map((position, index) => (
               <Card key={index} className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-md">{position.title || "Unnamed Position"}</CardTitle>
@@ -215,7 +215,7 @@ export default function MahasiswaPage({ dashboardData }: { dashboardData: Mahasi
       {/* Recent Positions */}
       <div>
         <h3 className="text-xl font-semibold mb-4">Lowongan Terbaru</h3>
-        {dashboardData.recentLowongan.length > 0 ? (
+        {dashboardData.recentLowongan?.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {dashboardData.recentLowongan.map((position, index) => (
               <Card key={index} className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">
