@@ -2,9 +2,28 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
 import DosenSidebar from "@/components/dashboard/dosen/sidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Users, Clock, BookCheck } from "lucide-react";
 import DosenPage from "@/components/dashboard/dosen/dosenpage";
+
+interface Course {
+  kode: string;
+  nama: string;
+  deskripsi: string;
+  dosenPengampuEmails: string[];
+}
+
+interface Lowongan {
+  lowonganId: string;
+  idMataKuliah: string;
+  namaMataKuliah: string;
+  deskripsiMataKuliah: string;
+  tahunAjaran: string;
+  semester: string;
+  statusLowongan: string;
+  jumlahAsdosDibutuhkan: number;
+  jumlahAsdosDiterima: number;
+  jumlahAsdosPendaftar: number;
+  idDaftarPendaftaran: string[];
+}
 
 interface DosenDashboardData {
   userRole: string;
@@ -19,8 +38,11 @@ interface DosenDashboardData {
   courseCount: number;
   acceptedAssistantCount: number;
   openPositionCount: number;
-  courses: any[];
-  openPositions: any[];
+  courses: any[] | null;
+  openPositions: any[] | null;
+  coursesTaught: Course[] | null;
+  lowonganPerCourse: Record<string, Lowongan[]> | null;
+  acceptedAssistantsPerCourse: Record<string, number> | null;
 }
 
 export default function DosenDashboard() {
@@ -37,8 +59,11 @@ export default function DosenDashboard() {
         courseCount: 0,
         acceptedAssistantCount: 0,
         openPositionCount: 0,
-        courses: [],
-        openPositions: []
+        courses: null,
+        openPositions: null,
+        coursesTaught: null,
+        lowonganPerCourse: null,
+        acceptedAssistantsPerCourse: null
     });
     
     const [isLoading, setIsLoading] = useState(true);
@@ -51,7 +76,7 @@ export default function DosenDashboard() {
                 const response = await fetch("/api/dashboard/dosen", {
                     method: "GET", 
                     headers: { "Content-Type": "application/json" ,
-                        "Authorization": `Bearer ${localStorage.getItem('token')}` // Pastikan token ada
+                        "Authorization": `Bearer ${localStorage.getItem('token')}`
                     },
                 });
                 if (!response.ok) {
@@ -81,10 +106,8 @@ export default function DosenDashboard() {
     }
 
     return(
-            <DosenSidebar>
-                <DosenPage dashboardData={dashboardData} />
-            </DosenSidebar>
-    )
-
+        <DosenSidebar>
+            <DosenPage dashboardData={dashboardData} />
+        </DosenSidebar>
+    );
 }
-

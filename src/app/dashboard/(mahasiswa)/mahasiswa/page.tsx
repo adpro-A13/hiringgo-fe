@@ -4,6 +4,20 @@ import { useState, useEffect } from "react";
 import MahasiswaSidebar from "@/components/dashboard/mahasiswa/sidebar";
 import MahasiswaPage from "@/components/dashboard/mahasiswa/mahasiswapage";
 
+interface Lowongan {
+  lowonganId: string;
+  idMataKuliah: string;
+  namaMataKuliah: string;
+  deskripsiMataKuliah: string;
+  tahunAjaran: string;
+  semester: string;
+  statusLowongan: string;
+  jumlahAsdosDibutuhkan: number;
+  jumlahAsdosDiterima: number;
+  jumlahAsdosPendaftar: number;
+  idDaftarPendaftaran: string[];
+}
+
 interface MahasiswaDashboardData {
   userRole: string;
   username: string;
@@ -22,8 +36,7 @@ interface MahasiswaDashboardData {
   rejectedApplicationsCount: number;
   totalLoggedHours: number;
   totalIncentive: number;
-  acceptedLowongan: any[];
-  recentLowongan: any[];
+  acceptedLowongan: Lowongan[];
 }
 
 export default function MahasiswaDashboard() {
@@ -45,8 +58,7 @@ export default function MahasiswaDashboard() {
         rejectedApplicationsCount: 0,
         totalLoggedHours: 0,
         totalIncentive: 0,
-        acceptedLowongan: [],
-        recentLowongan: []
+        acceptedLowongan: []
     });
     
     const [isLoading, setIsLoading] = useState(true);
@@ -58,9 +70,10 @@ export default function MahasiswaDashboard() {
                 setIsLoading(true);
                 const response = await fetch("/api/dashboard/mahasiswa", {
                     method: "GET", 
-                    headers: { "Content-Type": "application/json" ,
-                        "Authorization": `Bearer ${localStorage.getItem('token')}` // Pastikan token ada
-                    },
+                    headers: {
+                        "Authorization": `Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDc5MzIwNjYsImV4cCI6MTc0NzkzNTY2Nn0.AGWj1nlgtklwSGeca-xmSzwngeFOaYWbIkVyt33fCos`,
+                        "Content-Type": "application/json"
+                    }
                 });
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);

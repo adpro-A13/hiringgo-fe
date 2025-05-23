@@ -7,14 +7,26 @@ import {
   ClipboardCheck, 
   Clock, 
   Info, 
-  Mail,
   CheckCircle,
   XCircle,
   HourglassIcon, 
   Calendar,
   DollarSign
 } from "lucide-react";
-import { useEffect, useState } from "react";
+
+interface Lowongan {
+  lowonganId: string;
+  idMataKuliah: string;
+  namaMataKuliah: string;
+  deskripsiMataKuliah: string;
+  tahunAjaran: string;
+  semester: string;
+  statusLowongan: string;
+  jumlahAsdosDibutuhkan: number;
+  jumlahAsdosDiterima: number;
+  jumlahAsdosPendaftar: number;
+  idDaftarPendaftaran: string[];
+}
 
 interface MahasiswaDashboardData {
   userRole: string;
@@ -34,8 +46,7 @@ interface MahasiswaDashboardData {
   rejectedApplicationsCount: number;
   totalLoggedHours: number;
   totalIncentive: number;
-  acceptedLowongan: any[];
-  recentLowongan: any[];
+  acceptedLowongan: Lowongan[];
 }
 
 export default function MahasiswaPage({ dashboardData }: { dashboardData: MahasiswaDashboardData }) {
@@ -91,7 +102,7 @@ export default function MahasiswaPage({ dashboardData }: { dashboardData: Mahasi
             <Clock className="h-5 w-5 text-green-500 dark:text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.totalLoggedHours}</div>
+            <div className="text-2xl font-bold">{dashboardData.totalLoggedHours.toFixed(2)}</div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Jam kerja tercatat
             </p>
@@ -107,7 +118,7 @@ export default function MahasiswaPage({ dashboardData }: { dashboardData: Mahasi
             <DollarSign className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Rp {dashboardData.totalIncentive.toLocaleString()}</div>
+            <div className="text-2xl font-bold">Rp {dashboardData.totalIncentive.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Insentif yang diterima
             </p>
@@ -174,29 +185,39 @@ export default function MahasiswaPage({ dashboardData }: { dashboardData: Mahasi
         <h3 className="text-xl font-semibold mb-4">Posisi Asisten Diterima</h3>
         {dashboardData.acceptedLowongan?.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {dashboardData.acceptedLowongan?.map((position, index) => (
+            {dashboardData.acceptedLowongan.map((lowongan, index) => (
               <Card key={index} className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-md">{position.title || "Unnamed Position"}</CardTitle>
+                  <CardTitle className="text-md">{lowongan.namaMataKuliah} ({lowongan.idMataKuliah})</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
                     <BookOpen className="mr-2 h-4 w-4" />
-                    {position.courseName || "No course specified"}
+                    {lowongan.namaMataKuliah}
                   </div>
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    <Mail className="mr-2 h-4 w-4" />
-                    {position.dosenEmail || "No email specified"}
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                     <Calendar className="mr-2 h-4 w-4" />
-                    {position.semester || "No semester information"}
+                    {lowongan.tahunAjaran} - {lowongan.semester}
                   </div>
-                  {position.description && (
-                    <p className="text-xs text-gray-500 mt-3 line-clamp-2">
-                      {position.description}
-                    </p>
-                  )}
+                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <span className="mr-2">Status:</span>
+                    <span className={`font-semibold ${lowongan.statusLowongan === "DITERIMA" ? "text-green-600" : "text-gray-500"}`}>
+                      {lowongan.statusLowongan}
+                    </span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <span className="mr-2">Dibutuhkan:</span>
+                    {lowongan.jumlahAsdosDibutuhkan}
+                    <span className="ml-4 mr-2">Diterima:</span>
+                    {lowongan.jumlahAsdosDiterima}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <span className="mr-2">Pendaftar:</span>
+                    {lowongan.jumlahAsdosPendaftar}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-3">
+                    {lowongan.deskripsiMataKuliah}
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -207,51 +228,6 @@ export default function MahasiswaPage({ dashboardData }: { dashboardData: Mahasi
             <h4 className="text-lg font-medium mb-1">Belum ada posisi diterima</h4>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Anda belum diterima pada posisi asisten dosen manapun.
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Recent Positions */}
-      <div>
-        <h3 className="text-xl font-semibold mb-4">Lowongan Terbaru</h3>
-        {dashboardData.recentLowongan?.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {dashboardData.recentLowongan.map((position, index) => (
-              <Card key={index} className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-md">{position.title || "Unnamed Position"}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    {position.courseName || "No course specified"}
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    <Mail className="mr-2 h-4 w-4" />
-                    {position.dosenEmail || "No contact information"}
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                    <Clock className="mr-2 h-4 w-4" />
-                    {position.deadline 
-                      ? `Deadline: ${new Date(position.deadline).toLocaleDateString()}`
-                      : "No deadline specified"}
-                  </div>
-                  {position.description && (
-                    <p className="text-xs text-gray-500 mt-3 line-clamp-2">
-                      {position.description}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-8 text-center">
-            <Info className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <h4 className="text-lg font-medium mb-1">Tidak ada lowongan terbaru</h4>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Belum ada lowongan asisten dosen yang tersedia saat ini.
             </p>
           </div>
         )}
