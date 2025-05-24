@@ -3,6 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
 import DosenSidebar from "@/components/dashboard/dosen/sidebar";
 import DosenPage from "@/components/dashboard/dosen/dosenpage";
+import router from "next/router";
 
 interface Course {
   kode: string;
@@ -73,6 +74,8 @@ export default function DosenDashboard() {
         const fetchDosenData = async () => {
             try {
                 setIsLoading(true);
+                setError(null); 
+                
                 const response = await fetch("/api/dashboard/dosen", {
                     method: "GET", 
                     headers: {
@@ -80,16 +83,58 @@ export default function DosenDashboard() {
                         "Content-Type": "application/json"
                     }
                 });
+
+                // Enhanced error handling based on status codes
                 if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
+                    let errorMessage = `HTTP error! Status: ${response.status}`;
+                    
+                    switch (response.status) {
+                        case 401:
+                            localStorage.removeItem('authToken');
+                            sessionStorage.removeItem('authToken');
+                            
+                            router.push('/login');
+                            return;
+                        case 403:
+                            errorMessage = "Forbidden: You don't have permission to access this resource";
+                            break;
+                        case 404:
+                            errorMessage = "Dashboard data not found";
+                            break;
+                        case 500:
+                            errorMessage = "Internal server error. Please try again later";
+                            break;
+                        default:
+                            errorMessage = `Request failed with status ${response.status}`;
+                    }
+                    
+                    throw new Error(errorMessage);
                 }
 
                 const data = await response.json();
+                
+                if (!data || typeof data !== 'object') {
+                    throw new Error("Invalid response format received from server");
+                }
+
+                if (!data.userRole || !data.username) {
+                    throw new Error("Incomplete dashboard data received");
+                }
+
                 setDashboardData(data);
                 setError(null);
+                
             } catch (err) {
                 console.error("API Error:", err);
-                setError(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
+                
+                // More specific error handling
+                if (err instanceof TypeError && err.message.includes('fetch')) {
+                    setError("Network error: Please check your internet connection");
+                } else if (err instanceof Error) {
+                    setError(err.message);
+                } else {
+                    setError("An unexpected error occurred. Please try again");
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -103,7 +148,17 @@ export default function DosenDashboard() {
     }
     
     if (error) {
-        return <div className="p-8 text-red-500 text-center">{error}</div>;
+    return (
+        <div className="p-8 text-center">
+            <div className="text-red-500 mb-4">{error}</div>
+            <button 
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+                Retry
+            </button>
+        </div>
+        );
     }
 
     return(
