@@ -8,10 +8,17 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Plus, Search, Edit, Trash2, Eye, BookOpen, AlertTriangle, CheckCircle, XCircle } from "lucide-react"
 import AdminSidebar from "@/components/dashboard/admin/sidebar"
+import MataKuliahForm from "@/components/matakuliah/matakuliah-form"
+import MataKuliahDetail from "@/components/matakuliah/matakuliah-detail"
 
 interface MataKuliah {
   kode: string
@@ -47,63 +54,13 @@ export default function ManajemenMataKuliah() {
           Authorization: `Bearer ${localStorage.getItem("token") ?? ""}`,
         },
       })
-
-      if (!res.ok) {
-        if (res.status === 404) {
-          console.log("API not found, using mock data")
-          const mockData: MataKuliah[] = [
-            {
-              kode: "CS1234",
-              nama: "Pemrograman Lanjut",
-              deskripsi: "Mata kuliah lanjutan tentang pemrograman Java dan Spring Boot",
-              dosenPengampuEmails: ["dosen@example.com", "pengampu@ui.ac.id"],
-            },
-            {
-              kode: "CS123",
-              nama: "Algoritma dan Struktur Data",
-              deskripsi: "Pembelajaran tentang algoritma dan struktur data fundamental",
-              dosenPengampuEmails: ["joko@gmail.com"],
-            },
-            {
-              kode: "MK1",
-              nama: "Mobile Development",
-              deskripsi: "Pengembangan aplikasi mobile dengan React Native",
-              dosenPengampuEmails: ["mobile@example.com"],
-            },
-            {
-              kode: "MK2",
-              nama: "Web Development",
-              deskripsi: "Pengembangan aplikasi web modern",
-              dosenPengampuEmails: ["web@example.com", "frontend@ui.ac.id"],
-            },
-            {
-              kode: "CS102",
-              nama: "Dasar Pemrograman",
-              deskripsi: "Dasar-dasar pemrograman untuk pemula",
-              dosenPengampuEmails: ["basic@example.com"],
-            },
-            {
-              kode: "CS103",
-              nama: "Pemrograman Berorientasi Objek",
-              deskripsi: "Konsep dan implementasi OOP",
-              dosenPengampuEmails: ["oop@example.com", "java@ui.ac.id"],
-            },
-          ]
-          setMataKuliahs(mockData)
-          setFilteredMataKuliahs(mockData)
-          showMessage("info", "Menggunakan data contoh (API tidak tersedia)")
-          return
-        }
-        throw new Error(`Failed to fetch: ${res.status}`)
-      }
-
       const data: MataKuliah[] = await res.json()
       setMataKuliahs(data)
       setFilteredMataKuliahs(data)
     } catch (err) {
       console.error("Error fetching MataKuliahs:", err)
 
-      // Fallback to mock data on any error
+      // For demo purposes, using mock data
       const mockData: MataKuliah[] = [
         {
           kode: "CS1234",
@@ -275,6 +232,13 @@ export default function ManajemenMataKuliah() {
                 Tambah Mata Kuliah
               </Button>
             </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Tambah Mata Kuliah Baru</DialogTitle>
+                <DialogDescription>Isi form di bawah untuk menambah mata kuliah baru</DialogDescription>
+              </DialogHeader>
+              <MataKuliahForm onSuccess={handleCreateSuccess} />
+            </DialogContent>
           </Dialog>
         </div>
 
@@ -352,6 +316,12 @@ export default function ManajemenMataKuliah() {
                                   <Eye className="h-4 w-4" />
                                 </Button>
                               </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle>Detail Mata Kuliah</DialogTitle>
+                                </DialogHeader>
+                                {selectedMataKuliah && <MataKuliahDetail MataKuliah={selectedMataKuliah} />}
+                              </DialogContent>
                             </Dialog>
 
                             <Dialog
@@ -366,6 +336,13 @@ export default function ManajemenMataKuliah() {
                                   <Edit className="h-4 w-4" />
                                 </Button>
                               </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle>Edit Mata Kuliah</DialogTitle>
+                                  <DialogDescription>Perbarui informasi mata kuliah</DialogDescription>
+                                </DialogHeader>
+                                {selectedMataKuliah && <MataKuliahForm MataKuliah={selectedMataKuliah} onSuccess={handleEditSuccess} />}
+                              </DialogContent>
                             </Dialog>
 
                             <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(MataKuliah)}>
@@ -381,6 +358,55 @@ export default function ManajemenMataKuliah() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                Konfirmasi Penghapusan
+              </DialogTitle>
+              <DialogDescription>
+                Apakah Anda yakin ingin menghapus mata kuliah{" "}
+                <span className="font-semibold text-foreground">
+                  {MataKuliahToDelete?.nama} ({MataKuliahToDelete?.kode})
+                </span>
+                ?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mt-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium text-destructive mb-1">Peringatan!</p>
+                  <p className="text-muted-foreground">
+                    Tindakan ini tidak dapat dibatalkan. Semua data yang terkait dengan mata kuliah ini akan hilang
+                    secara permanen.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="gap-2 mt-6">
+              <Button variant="outline" onClick={handleDeleteCancel} disabled={isDeleting}>
+                Batal
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteConfirm} disabled={isDeleting}>
+                {isDeleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Menghapus...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Hapus Mata Kuliah
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminSidebar>
   )
