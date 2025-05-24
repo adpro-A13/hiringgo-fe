@@ -3,6 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
 import MahasiswaSidebar from "@/components/dashboard/mahasiswa/sidebar";
 import MahasiswaPage from "@/components/dashboard/mahasiswa/mahasiswapage";
+import router from "next/router";
 
 interface Lowongan {
   lowonganId: string;
@@ -73,7 +74,7 @@ export default function MahasiswaDashboard() {
                 const response = await fetch("/api/dashboard/mahasiswa", {
                     method: "GET", 
                     headers: {
-                        "Authorization": `Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDgwMDM3OTksImV4cCI6MTc0ODAwNzM5OX0.qlfyMNbwxYDJDyMYCF8DfPRS5lKBcvrUkBC1wAlRnK8`,
+                        "Authorization": `Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDgwNzU4NjgsImV4cCI6MTc0ODA3OTQ2OH0.OH1-RhaHp3Z0oB2PSxJAnLxvlLTaV0XEYoxRmPIgS_o`,
                         "Content-Type": "application/json"
                     }
                 });

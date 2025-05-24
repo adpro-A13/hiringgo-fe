@@ -73,7 +73,7 @@ export function DialogDetailLowongan({ lowongan, onApply, applicationStatus }: D
         const fetchStatus = async () => {
             try {
                 setLoading(true);
-                const token = localStorage.getItem('authToken') || 'eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDc3MDczMDUsImV4cCI6MTc0NzcxMDkwNX0.8sPFldzeCJ5_EMTL4omimkF6n-p1zF-HFouRFY9slLY';
+                const token = localStorage.getItem('authToken') || 'eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDgwNzU4NjgsImV4cCI6MTc0ODA3OTQ2OH0.OH1-RhaHp3Z0oB2PSxJAnLxvlLTaV0XEYoxRmPIgS_o';
                 const response = await fetch(`/api/lowongandaftar/${lowongan.lowonganId}/status`, {
                     headers: {
                         "Authorization": `Bearer ${token}`
@@ -129,7 +129,7 @@ export function DialogDetailLowongan({ lowongan, onApply, applicationStatus }: D
         }
 
         try {
-            const token = localStorage.getItem('authToken') || 'eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDc4OTMzMjQsImV4cCI6MTc0Nzg5NjkyNH0.ftGf5jCY0_21oRqIa6zCLVAT9FXrZHvkEAxvsy43IIQ';
+            const token = localStorage.getItem('authToken') || 'eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDc5Mzc2NjYsImV4cCI6MTc0Nzk0MTI2Nn0.yIZ0NoRjmxlsMaxI0kfYz03EaY8TNu-L_tInCReXc1g';
             
             const response = await fetch(`/api/lowongandaftar/${lowongan.lowonganId}/daftar`, {
                 method: "POST",
