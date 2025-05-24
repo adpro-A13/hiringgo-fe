@@ -1,7 +1,387 @@
-import AdminSidebar from "@/components/dashboard/admin/sidebar";
+"use client"
 
-export default function Admin(){
-    return(
-        <AdminSidebar>ini manajemen matkul</AdminSidebar>
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Dialog,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Plus, Search, Edit, Trash2, Eye, BookOpen, AlertTriangle, CheckCircle, XCircle } from "lucide-react"
+import AdminSidebar from "@/components/dashboard/admin/sidebar"
+
+interface MataKuliah {
+  kode: string
+  nama: string
+  deskripsi: string
+  dosenPengampuEmails: string[]
+}
+
+export default function ManajemenMataKuliah() {
+  const [MataKuliahs, setMataKuliahs] = useState<MataKuliah[]>([])
+  const [filteredMataKuliahs, setFilteredMataKuliahs] = useState<MataKuliah[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedMataKuliah, setSelectedMataKuliah] = useState<MataKuliah | null>(null)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [MataKuliahToDelete, setMataKuliahToDelete] = useState<MataKuliah | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [message, setMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null)
+
+  const showMessage = (type: "success" | "error" | "info", text: string) => {
+    setMessage({ type, text })
+    setTimeout(() => setMessage(null), 5000) // Hide after 5 seconds
+  }
+
+  const fetchMataKuliahs = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch("/api/matakuliah/getAll", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") ?? ""}`,
+        },
+      })
+
+      if (!res.ok) {
+        if (res.status === 404) {
+          console.log("API not found, using mock data")
+          const mockData: MataKuliah[] = [
+            {
+              kode: "CS1234",
+              nama: "Pemrograman Lanjut",
+              deskripsi: "Mata kuliah lanjutan tentang pemrograman Java dan Spring Boot",
+              dosenPengampuEmails: ["dosen@example.com", "pengampu@ui.ac.id"],
+            },
+            {
+              kode: "CS123",
+              nama: "Algoritma dan Struktur Data",
+              deskripsi: "Pembelajaran tentang algoritma dan struktur data fundamental",
+              dosenPengampuEmails: ["joko@gmail.com"],
+            },
+            {
+              kode: "MK1",
+              nama: "Mobile Development",
+              deskripsi: "Pengembangan aplikasi mobile dengan React Native",
+              dosenPengampuEmails: ["mobile@example.com"],
+            },
+            {
+              kode: "MK2",
+              nama: "Web Development",
+              deskripsi: "Pengembangan aplikasi web modern",
+              dosenPengampuEmails: ["web@example.com", "frontend@ui.ac.id"],
+            },
+            {
+              kode: "CS102",
+              nama: "Dasar Pemrograman",
+              deskripsi: "Dasar-dasar pemrograman untuk pemula",
+              dosenPengampuEmails: ["basic@example.com"],
+            },
+            {
+              kode: "CS103",
+              nama: "Pemrograman Berorientasi Objek",
+              deskripsi: "Konsep dan implementasi OOP",
+              dosenPengampuEmails: ["oop@example.com", "java@ui.ac.id"],
+            },
+          ]
+          setMataKuliahs(mockData)
+          setFilteredMataKuliahs(mockData)
+          showMessage("info", "Menggunakan data contoh (API tidak tersedia)")
+          return
+        }
+        throw new Error(`Failed to fetch: ${res.status}`)
+      }
+
+      const data: MataKuliah[] = await res.json()
+      setMataKuliahs(data)
+      setFilteredMataKuliahs(data)
+    } catch (err) {
+      console.error("Error fetching MataKuliahs:", err)
+
+      // Fallback to mock data on any error
+      const mockData: MataKuliah[] = [
+        {
+          kode: "CS1234",
+          nama: "Pemrograman Lanjut",
+          deskripsi: "Mata kuliah lanjutan tentang pemrograman Java dan Spring Boot",
+          dosenPengampuEmails: ["dosen@example.com", "pengampu@ui.ac.id"],
+        },
+        {
+          kode: "CS123",
+          nama: "Algoritma dan Struktur Data",
+          deskripsi: "Pembelajaran tentang algoritma dan struktur data fundamental",
+          dosenPengampuEmails: ["joko@gmail.com"],
+        },
+        {
+          kode: "MK1",
+          nama: "Mobile Development",
+          deskripsi: "Pengembangan aplikasi mobile dengan React Native",
+          dosenPengampuEmails: ["mobile@example.com"],
+        },
+        {
+          kode: "MK2",
+          nama: "Web Development",
+          deskripsi: "Pengembangan aplikasi web modern",
+          dosenPengampuEmails: ["web@example.com", "frontend@ui.ac.id"],
+        },
+        {
+          kode: "CS102",
+          nama: "Dasar Pemrograman",
+          deskripsi: "Dasar-dasar pemrograman untuk pemula",
+          dosenPengampuEmails: ["basic@example.com"],
+        },
+        {
+          kode: "CS103",
+          nama: "Pemrograman Berorientasi Objek",
+          deskripsi: "Konsep dan implementasi OOP",
+          dosenPengampuEmails: ["oop@example.com", "java@ui.ac.id"],
+        },
+      ]
+      setMataKuliahs(mockData)
+      setFilteredMataKuliahs(mockData)
+      showMessage("info", "Menggunakan data contoh (API tidak tersedia)")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchMataKuliahs()
+  }, [])
+
+  useEffect(() => {
+    const filtered = MataKuliahs.filter(
+      (MataKuliah) =>
+        MataKuliah.kode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        MataKuliah.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        MataKuliah.deskripsi.toLowerCase().includes(searchTerm.toLowerCase()),
     )
+    setFilteredMataKuliahs(filtered)
+  }, [searchTerm, MataKuliahs])
+
+  const handleDeleteClick = (MataKuliah: MataKuliah) => {
+    setMataKuliahToDelete(MataKuliah)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!MataKuliahToDelete) return
+
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/matakuliah/${MataKuliahToDelete.kode}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") ?? ""}`,
+        },
+      })
+
+      if (!res.ok && res.status !== 404) {
+        throw new Error("Failed to delete MataKuliah")
+      }
+
+      // For demo purposes, remove from local state
+      const updatedMataKuliahs = MataKuliahs.filter((MataKuliah) => MataKuliah.kode !== MataKuliahToDelete.kode)
+      setMataKuliahs(updatedMataKuliahs)
+      setFilteredMataKuliahs(updatedMataKuliahs)
+
+      showMessage("success", "Mata kuliah berhasil dihapus")
+      setIsDeleteDialogOpen(false)
+      setMataKuliahToDelete(null)
+    } catch (err) {
+      console.error("Error deleting MataKuliah:", err)
+
+      // For demo purposes, still remove from local state
+      const updatedMataKuliahs = MataKuliahs.filter((MataKuliah) => MataKuliah.kode !== MataKuliahToDelete.kode)
+      setMataKuliahs(updatedMataKuliahs)
+      setFilteredMataKuliahs(updatedMataKuliahs)
+
+      showMessage("info", "Mata kuliah dihapus (mode demo)")
+      setIsDeleteDialogOpen(false)
+      setMataKuliahToDelete(null)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleDeleteCancel = () => {
+    setIsDeleteDialogOpen(false)
+    setMataKuliahToDelete(null)
+  }
+
+  const handleCreateSuccess = () => {
+    setIsCreateDialogOpen(false)
+    fetchMataKuliahs()
+    showMessage("success", "Mata kuliah berhasil dibuat")
+  }
+
+  const handleEditSuccess = () => {
+    setIsEditDialogOpen(false)
+    setSelectedMataKuliah(null)
+    fetchMataKuliahs()
+    showMessage("success", "Mata kuliah berhasil diperbarui")
+  }
+
+  if (loading) {
+    return (
+      <AdminSidebar>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground animate-pulse" />
+            <p className="text-muted-foreground">Memuat data mata kuliah...</p>
+          </div>
+        </div>
+      </AdminSidebar>
+    )
+  }
+
+  return (
+    <AdminSidebar>
+      <div className="space-y-6">
+        {message && (
+          <div
+            className={`p-4 rounded-lg border flex items-center gap-3 ${
+              message.type === "success"
+                ? "bg-green-50 border-green-200 text-green-800"
+                : message.type === "error"
+                  ? "bg-red-50 border-red-200 text-red-800"
+                  : "bg-blue-50 border-blue-200 text-blue-800"
+            }`}
+          >
+            {message.type === "success" && <CheckCircle className="h-5 w-5" />}
+            {message.type === "error" && <XCircle className="h-5 w-5" />}
+            {message.type === "info" && <AlertTriangle className="h-5 w-5" />}
+            <span>{message.text}</span>
+            <Button variant="ghost" size="sm" onClick={() => setMessage(null)} className="ml-auto h-6 w-6 p-0">
+              <XCircle className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Manajemen Mata Kuliah</h1>
+            <p className="text-muted-foreground">Kelola mata kuliah yang tersedia di sistem</p>
+          </div>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Tambah Mata Kuliah
+              </Button>
+            </DialogTrigger>
+          </Dialog>
+        </div>
+
+        <Card className="bg-white dark:bg-gray-800 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Daftar Mata Kuliah
+            </CardTitle>
+            <div className="flex items-center space-x-2">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cari mata kuliah..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Badge variant="secondary">{filteredMataKuliahs.length} mata kuliah</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Kode</TableHead>
+                    <TableHead>Nama</TableHead>
+                    <TableHead>Deskripsi</TableHead>
+                    <TableHead>Dosen Pengampu</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredMataKuliahs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8">
+                        <div className="text-muted-foreground">
+                          {searchTerm ? "Tidak ada mata kuliah yang sesuai dengan pencarian" : "Belum ada mata kuliah"}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredMataKuliahs.map((MataKuliah) => (
+                      <TableRow key={MataKuliah.kode}>
+                        <TableCell className="font-mono font-medium">{MataKuliah.kode}</TableCell>
+                        <TableCell className="font-medium">{MataKuliah.nama}</TableCell>
+                        <TableCell className="max-w-xs truncate">{MataKuliah.deskripsi}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {MataKuliah.dosenPengampuEmails.slice(0, 2).map((email) => (
+                              <Badge key={email} variant="outline" className="text-xs">
+                                {email}
+                              </Badge>
+                            ))}
+                            {MataKuliah.dosenPengampuEmails.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{MataKuliah.dosenPengampuEmails.length - 2} lainnya
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Dialog
+                              open={isDetailDialogOpen && selectedMataKuliah?.kode === MataKuliah.kode}
+                              onOpenChange={(open) => {
+                                setIsDetailDialogOpen(open)
+                                if (!open) setSelectedMataKuliah(null)
+                              }}
+                            >
+                              <DialogTrigger asChild>
+                                <Button variant="ghost" size="sm" onClick={() => setSelectedMataKuliah(MataKuliah)}>
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                            </Dialog>
+
+                            <Dialog
+                              open={isEditDialogOpen && selectedMataKuliah?.kode === MataKuliah.kode}
+                              onOpenChange={(open) => {
+                                setIsEditDialogOpen(open)
+                                if (!open) setSelectedMataKuliah(null)
+                              }}
+                            >
+                              <DialogTrigger asChild>
+                                <Button variant="ghost" size="sm" onClick={() => setSelectedMataKuliah(MataKuliah)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                            </Dialog>
+
+                            <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(MataKuliah)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </AdminSidebar>
+  )
 }
