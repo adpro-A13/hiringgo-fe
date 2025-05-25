@@ -76,7 +76,7 @@ export default function DosenDashboard() {
                 const response = await fetch("/api/dashboard/dosen", {
                     method: "GET", 
                     headers: { "Content-Type": "application/json" ,
-                        "Authorization": `Bearer ${localStorage.getItem('token')}`
+                        "Authorization": `Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiRE9TRU4iLCJuaXAiOiIyMzA2MjE0OTkwIiwiZnVsbE5hbWUiOiJkb3NlbiIsImlkIjoiMzdlNGRjOWEtMmZlYy00MWE1LWFlOTgtMmRkNjcxODdjMTFjIiwiZW1haWwiOiJkb3NlbkBleGFtcGxlLmNvbSIsInN1YiI6ImRvc2VuQGV4YW1wbGUuY29tIiwiaWF0IjoxNzQ4MTUwNzk0LCJleHAiOjE3NDgxNTQzOTR9.gs3HqM1dOjQUhGgFbT-Qi7-oBFJOuDVUDX729MS7WFg`
                     },
                 });
                 if (!response.ok) {
