@@ -54,7 +54,6 @@ export default function ListLowongan({ data }: { data: Lowongan[] }) {
     }>({});
 
     useEffect(() => {
-        // Group lowongan by tahunAjaran and semester
         const grouped = data.reduce((acc, lowongan) => {
             const key = `${lowongan.semester} ${lowongan.tahunAjaran}`;
             if (!acc[key]) {
@@ -75,7 +74,7 @@ export default function ListLowongan({ data }: { data: Lowongan[] }) {
     const fetchApplicationStatus = async (lowonganId: string) => {
         try {
             setLoadingStatus(prev => ({ ...prev, [lowonganId]: true }));
-            const token = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDgwNzU4NjgsImV4cCI6MTc0ODA3OTQ2OH0.OH1-RhaHp3Z0oB2PSxJAnLxvlLTaV0XEYoxRmPIgS_o";
+            const token = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDgxNDMxMjIsImV4cCI6MTc0ODE0NjcyMn0.dTpi0lVrmmog8zK7WTbZP9dn37_pwlEv2aFjst2Ep1s";
             const response = await fetch(`/api/lowongandaftar/${lowonganId}/status`, {
                 headers: {
                     "Authorization": `Bearer ${token}`
@@ -97,13 +96,11 @@ export default function ListLowongan({ data }: { data: Lowongan[] }) {
     };
 
     const handleApply = (lowongan: Lowongan) => {
-        // Refresh the status after successful application
         sonnerToast.success("Pendaftaran berhasil", {
             description: `Anda telah mendaftar untuk lowongan ${lowongan.namaMataKuliah}`,
             duration: 3000
         });
         
-        // Refresh the application status
         fetchApplicationStatus(lowongan.lowonganId);
     };
     
