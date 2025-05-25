@@ -15,12 +15,71 @@ export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
+    const [timeError, setTimeError] = useState("");
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : "";
 
+    // Enhanced time validation function
+    const validateTimes = (startTime, endTime, date) => {
+        if (!startTime || !endTime) return "";
+
+        // Convert times to minutes for easier comparison
+        const [startHour, startMin] = startTime.split(':').map(Number);
+        const [endHour, endMin] = endTime.split(':').map(Number);
+
+        const startTotalMin = startHour * 60 + startMin;
+        const endTotalMin = endHour * 60 + endMin;
+
+        if (startTotalMin >= endTotalMin) {
+            return "Waktu selesai harus lebih dari waktu mulai";
+        }
+
+        // Calculate duration
+        const durationMin = endTotalMin - startTotalMin;
+        const hours = Math.floor(durationMin / 60);
+        const minutes = durationMin % 60;
+
+        return "";
+    };
+
     const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-        if (error) setError(null); // Clear error when user starts typing
-        if (success) setSuccess(false); // Clear success when user starts typing
+        const { name, value } = e.target;
+        const newForm = { ...form, [name]: value };
+        setForm(newForm);
+
+        // Clear general errors
+        if (error) setError(null);
+        if (success) setSuccess(false);
+
+        // Real-time time validation
+        if (name === 'waktuMulai' || name === 'waktuSelesai') {
+            const startTime = name === 'waktuMulai' ? value : form.waktuMulai;
+            const endTime = name === 'waktuSelesai' ? value : form.waktuSelesai;
+
+            const timeValidationError = validateTimes(startTime, endTime, form.tanggalLog);
+            setTimeError(timeValidationError);
+        }
+    };
+
+    const calculateDuration = () => {
+        if (!form.waktuMulai || !form.waktuSelesai || timeError) return "";
+
+        const [startHour, startMin] = form.waktuMulai.split(':').map(Number);
+        const [endHour, endMin] = form.waktuSelesai.split(':').map(Number);
+
+        const startTotalMin = startHour * 60 + startMin;
+        const endTotalMin = endHour * 60 + endMin;
+        const durationMin = endTotalMin - startTotalMin;
+
+        const hours = Math.floor(durationMin / 60);
+        const minutes = durationMin % 60;
+
+        if (hours > 0 && minutes > 0) {
+            return `${hours} jam ${minutes} menit`;
+        } else if (hours > 0) {
+            return `${hours} jam`;
+        } else {
+            return `${minutes} menit`;
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -29,9 +88,35 @@ export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
         setError(null);
         setSuccess(false);
 
-        // Validation
-        if (form.waktuMulai && form.waktuSelesai && form.waktuMulai >= form.waktuSelesai) {
-            setError("Waktu selesai harus lebih dari waktu mulai");
+        // Comprehensive validation
+        if (!form.judul.trim()) {
+            setError("Judul log wajib diisi");
+            setSubmitting(false);
+            return;
+        }
+
+        if (!form.tanggalLog) {
+            setError("Tanggal log wajib diisi");
+            setSubmitting(false);
+            return;
+        }
+
+        if (!form.waktuMulai || !form.waktuSelesai) {
+            setError("Waktu mulai dan waktu selesai wajib diisi");
+            setSubmitting(false);
+            return;
+        }
+
+        if (!form.keterangan.trim()) {
+            setError("Keterangan aktivitas wajib diisi");
+            setSubmitting(false);
+            return;
+        }
+
+        // Time validation
+        const timeValidationError = validateTimes(form.waktuMulai, form.waktuSelesai, form.tanggalLog);
+        if (timeValidationError) {
+            setError(timeValidationError);
             setSubmitting(false);
             return;
         }
@@ -84,6 +169,8 @@ export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
         { value: "LAIN_LAIN", label: "Lainnya", icon: "📝" }
     ];
 
+    const duration = calculateDuration();
+
     return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-6">
             <div className="flex items-center gap-2 mb-6">
@@ -118,7 +205,7 @@ export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                         <FileText className="w-4 h-4 inline mr-1" />
-                        Judul Log
+                        Judul Log <span className="text-red-500">*</span>
                     </label>
                     <input
                         name="judul"
@@ -161,7 +248,7 @@ export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             <Calendar className="w-4 h-4 inline mr-1" />
-                            Tanggal
+                            Tanggal <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="date"
@@ -175,7 +262,7 @@ export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             <Clock className="w-4 h-4 inline mr-1" />
-                            Waktu Mulai
+                            Waktu Mulai <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="time"
@@ -183,13 +270,15 @@ export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
                             value={form.waktuMulai}
                             onChange={handleChange}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                                timeError ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                            }`}
                         />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             <Clock className="w-4 h-4 inline mr-1" />
-                            Waktu Selesai
+                            Waktu Selesai <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="time"
@@ -197,15 +286,35 @@ export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
                             value={form.waktuSelesai}
                             onChange={handleChange}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                                timeError ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                            }`}
                         />
                     </div>
                 </div>
 
+                {/* Time Error Message */}
+                {timeError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                        <span className="text-red-800 text-sm">{timeError}</span>
+                    </div>
+                )}
+
+                {/* Duration Display */}
+                {duration && !timeError && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-green-600 flex-shrink-0" />
+                        <span className="text-green-800 text-sm font-medium">
+                            Durasi aktivitas: {duration}
+                        </span>
+                    </div>
+                )}
+
                 {/* Keterangan */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Keterangan Aktivitas
+                        Keterangan Aktivitas <span className="text-red-500">*</span>
                     </label>
                     <textarea
                         name="keterangan"
@@ -213,9 +322,10 @@ export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
                         value={form.keterangan}
                         onChange={handleChange}
                         rows={4}
+                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-colors"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Opsional - Berikan detail tentang apa yang Anda lakukan</p>
+                    <p className="text-xs text-gray-500 mt-1">Wajib diisi - Berikan detail tentang apa yang Anda lakukan</p>
                 </div>
 
                 {/* Pesan untuk Dosen */}
@@ -240,9 +350,9 @@ export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
                     <button
                         type="button"
                         onClick={handleSubmit}
-                        disabled={submitting}
+                        disabled={submitting || !!timeError}
                         className={`w-full flex items-center justify-center gap-2 px-4 py-3 text-white font-medium rounded-lg transition-all duration-200 ${
-                            submitting
+                            submitting || timeError
                                 ? 'bg-gray-400 cursor-not-allowed'
                                 : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98]'
                         }`}
@@ -273,8 +383,8 @@ export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
                     <div>
                         <h4 className="text-sm font-medium text-blue-900 mb-1">Tips Pengisian Log</h4>
                         <ul className="text-xs text-blue-800 space-y-1">
-                            <li>• Pastikan waktu selesai lebih dari waktu mulai</li>
-                            <li>• Isi keterangan dengan detail untuk dokumentasi yang baik</li>
+                            <li>• Waktu selesai harus lebih dari waktu mulai</li>
+                            <li>• Keterangan aktivitas wajib diisi dengan detail yang jelas</li>
                             <li>• Gunakan pesan untuk dosen jika ada hal penting yang perlu dikomunikasikan</li>
                         </ul>
                     </div>
