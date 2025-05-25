@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 
 
 export default function Mahasiswa(){
-    const [lowonganData, setLowonganData] = useState([]);
+    const [lowonganData, setLowonganData] = useState<any>();
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
@@ -72,6 +72,7 @@ export default function Mahasiswa(){
                 const data = await response.json();
                 setLowonganData(data);
                 setError(null);
+                console.log("Lowongan data fetched successfully:", lowonganData);
             } catch (err) {
                 console.error("API Error:", err);
                 
@@ -90,6 +91,8 @@ export default function Mahasiswa(){
         fetchLowongan();
     }, [router]);
     
+    const lowonganList = lowonganData?.lowongan_list || [];
+    console.log("Lowongan List:", lowonganList);
         if (isLoading) {
             return <div className="p-8 text-center">Loading lowongan data...</div>;
         }
@@ -99,6 +102,6 @@ export default function Mahasiswa(){
         }
     
     return(
-        <MahasiswaSidebar><ListLowongan data={lowonganData}/></MahasiswaSidebar>
+        <MahasiswaSidebar><ListLowongan data={lowonganData.data.lowongan_list}/></MahasiswaSidebar>
     )
 }
