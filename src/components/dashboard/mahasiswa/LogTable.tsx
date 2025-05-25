@@ -361,25 +361,27 @@ export default function LogTable({ logs, onLogDeleted, onLogEdited }) {
                                             {log.pesanUntukDosen || '-'}
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex gap-2 justify-center">
-                                            <button
-                                                onClick={() => handleEditClick(log)}
-                                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors"
-                                            >
-                                                <Edit className="w-3 h-3" />
-                                                Edit
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(log.id)}
-                                                disabled={loading === log.id}
-                                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 transition-colors disabled:opacity-50"
-                                            >
-                                                <Trash2 className="w-3 h-3" />
-                                                {loading === log.id ? 'Menghapus...' : 'Hapus'}
-                                            </button>
-                                        </div>
-                                    </td>
+                                    {log.status !== "DITERIMA" && (
+                                        <td className="px-4 py-3">
+                                            <div className="flex gap-2 justify-center">
+                                                <button
+                                                    onClick={() => handleEditClick(log)}
+                                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors"
+                                                >
+                                                    <Edit className="w-3 h-3" />
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(log.id)}
+                                                    disabled={loading === log.id}
+                                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 transition-colors disabled:opacity-50"
+                                                >
+                                                    <Trash2 className="w-3 h-3" />
+                                                    {loading === log.id ? 'Menghapus...' : 'Hapus'}
+                                                </button>
+                                            </div>
+                                        </td>
+                                    )}
                                 </>
                             )}
                         </tr>
