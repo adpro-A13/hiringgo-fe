@@ -30,9 +30,7 @@ export async function POST(request: NextRequest) {
                 { error: 'Invalid JSON response from backend' },
                 { status: 500 }
             );
-        }
-
-        const authToken = data.token;
+        }        const authToken = data.token;
         const nextResponse = NextResponse.json({
             success: true,
             token: authToken,
@@ -40,22 +38,8 @@ export async function POST(request: NextRequest) {
             message: 'Authentication successful'
         });
 
-        if (authToken) {
-            const rememberMe = body.rememberMe === true;
-            const maxAge = rememberMe ? 60 * 60 * 24 * 7 : 60 * 60 * 24;
-
-            nextResponse.cookies.set({
-                name: 'authToken',
-                value: authToken,
-                path: '/',
-                maxAge: maxAge,
-                httpOnly: true,
-                sameSite: 'lax',
-                secure: process.env.NODE_ENV === 'production',
-            });
-
-            console.log('Cookie set server-side for token:', authToken.substring(0, 10) + '...');
-        }
+        // Note: Cookie setting is handled client-side for proper token access
+        console.log('Login successful, token will be set client-side');
 
         return nextResponse;
     } catch (error) {

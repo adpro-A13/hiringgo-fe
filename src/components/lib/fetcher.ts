@@ -44,17 +44,16 @@ export const fetcher = async <T>(
                 authHeader = `Bearer ${authCookie.value}`;
             }
         } else if (typeof window !== 'undefined') {
-            // Try localStorage first for client-side
-            const token = localStorage.getItem('authToken');
-            if (token) {
-                authHeader = `Bearer ${token}`;
-            } else {
-                // Fallback to cookies if localStorage doesn't have token
-                const cookies = document.cookie.split(';');
-                const authTokenCookie = cookies.find(cookie => cookie.trim().startsWith('authToken='));
-                const cookieToken = authTokenCookie ? authTokenCookie.split('=')[1].trim() : null;
-                if (cookieToken) {
-                    authHeader = `Bearer ${cookieToken}`;
+            // Check cookies for client-side requests
+            const cookies = document.cookie.split(';');
+            const authTokenCookie = cookies.find(cookie => 
+                cookie.trim().startsWith('authToken=')
+            );
+            
+            if (authTokenCookie) {
+                const cookieValue = authTokenCookie.split('=')[1]?.trim();
+                if (cookieValue && cookieValue !== '') {
+                    authHeader = `Bearer ${cookieValue}`;
                 }
             }
         }
