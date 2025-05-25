@@ -76,10 +76,8 @@ export default function ListLowongan({ data }: { data: Lowongan[] }) {
             setLoadingStatus(prev => ({ ...prev, [lowonganId]: true }));
             const token = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDgxNDMxMjIsImV4cCI6MTc0ODE0NjcyMn0.dTpi0lVrmmog8zK7WTbZP9dn37_pwlEv2aFjst2Ep1s";
             const response = await fetch(`/api/lowongandaftar/${lowonganId}/status`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            });
+                method: "GET",
+        });
             
             if (response.ok) {
                 const statusData = await response.json();

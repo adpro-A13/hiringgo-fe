@@ -73,12 +73,10 @@ export function DialogDetailLowongan({ lowongan, onApply, applicationStatus }: D
         const fetchStatus = async () => {
             try {
                 setLoading(true);
-                const token = localStorage.getItem('authToken') || 'eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDgxNDMxMjIsImV4cCI6MTc0ODE0NjcyMn0.dTpi0lVrmmog8zK7WTbZP9dn37_pwlEv2aFjst2Ep1s';
+                const token = localStorage.getItem('authToken');
                 const response = await fetch(`/api/lowongandaftar/${lowongan.lowonganId}/status`, {
-                    headers: {
-                        "Authorization": `Bearer ${token}`
-                    }
-                });
+                    method: "GET"
+                  });
                 
                 if (response.ok) {
                     const statusData = await response.json();
@@ -129,14 +127,10 @@ export function DialogDetailLowongan({ lowongan, onApply, applicationStatus }: D
         }
 
         try {
-            const token = localStorage.getItem('authToken') || 'eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDgxNDMxMjIsImV4cCI6MTc0ODE0NjcyMn0.dTpi0lVrmmog8zK7WTbZP9dn37_pwlEv2aFjst2Ep1s';
+            const token = localStorage.getItem('authToken');
             
             const response = await fetch(`/api/lowongandaftar/${lowongan.lowonganId}/daftar`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json", 
-                    "Authorization": `Bearer ${token}`, 
-                },
                 body: JSON.stringify({
                     ipk: parseFloat(formData.ipk),
                     sks: parseInt(formData.sks)
