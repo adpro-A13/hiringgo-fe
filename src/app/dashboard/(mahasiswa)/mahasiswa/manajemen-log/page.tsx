@@ -15,6 +15,15 @@ export default function Mahasiswa() {
     const handleLogCreated = (newLog) => {
         setLogs((prevLogs) => [...prevLogs, newLog]);
     };
+    const handleLogDeleted = (deletedId) => {
+        setLogs((prevLogs) => prevLogs.filter((log) => log.id !== deletedId));
+    };
+
+    const handleLogEdited = (updatedLog) => {
+        setLogs((prevLogs) =>
+            prevLogs.map((log) => (log.id === updatedLog.id ? updatedLog : log))
+        );
+    };
 
 
     const token = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMjEwNjc1NDMyMSIsImZ1bGxOYW1lIjoiQnVkaSBTYW50b3NvIiwiaWQiOiI3YTU4NDI2Zi05MGMwLTRmZTMtOWU2YS1jNWRhMjk2YjI0NmUiLCJlbWFpbCI6ImJ1ZGlAc3R1ZGVudC51aS5hYy5pZCIsInN1YiI6ImJ1ZGlAc3R1ZGVudC51aS5hYy5pZCIsImlhdCI6MTc0ODE1MDc3NSwiZXhwIjoxNzQ4MTU0Mzc1fQ.Xy5Db4O1uI7DEByXw6m_pqUsAYHQpO2o3f7oOEyjlVc";
@@ -101,6 +110,8 @@ export default function Mahasiswa() {
                     toggleLog={toggleLogForLowongan}
                     openLogId={openLogId}
                     onLogCreated={handleLogCreated}
+                    onLogDeleted={handleLogDeleted}
+                    onLogEdited={handleLogEdited}
                 />
             ))}
         </MahasiswaSidebar>

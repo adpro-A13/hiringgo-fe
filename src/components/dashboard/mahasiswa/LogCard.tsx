@@ -2,7 +2,8 @@ import LogTable from "./LogTable";
 import LogForm from "./LogForm";
 
 export default function LogCard({lowongan, pendaftaranUser, groupedLogs, toggleLog,
-                                    openLogId,pendaftaranId, userId, onLogCreated}) {
+                                    openLogId,pendaftaranId, userId, onLogCreated, onLogDeleted,
+                                    onLogEdited}) {
     return (
         <div
             key={lowongan.lowonganId}
@@ -36,8 +37,11 @@ export default function LogCard({lowongan, pendaftaranUser, groupedLogs, toggleL
                         const logs = groupedLogs[pendaftaran.pendaftaranId] || [];
                         return (
                             <div key={pendaftaran.pendaftaranId} style={{ marginBottom: "1rem" }}>
-                                <LogTable logs={logs} />
-                                <h1>userId</h1>
+                                <LogTable
+                                    logs={logs}
+                                    onLogDeleted={onLogDeleted}
+                                    onLogEdited={onLogEdited}
+                                />
                                 <LogForm
                                     pendaftaranId={pendaftaranId}
                                     userId={userId}
