@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import MahasiswaSidebar from "@/components/dashboard/mahasiswa/sidebar";
+import LogCard from "@/components/dashboard/mahasiswa/LogCard";
 
 export default function Mahasiswa() {
     const [lowongans, setLowongans] = useState([]);
@@ -10,9 +11,15 @@ export default function Mahasiswa() {
     const [loadingLogs, setLoadingLogs] = useState(true);
     const [errorLowongan, setErrorLowongan] = useState(null);
     const [errorLogs, setErrorLogs] = useState(null);
-    const [openLogId, setOpenLogId] = useState(null); // untuk toggle log per lowongan
+    const [openLogId, setOpenLogId] = useState(null);
+    const handleLogCreated = (newLog) => {
+        setLogs((prevLogs) => [...prevLogs, newLog]);
+    };
 
-    const token = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMjEwNjc1NDMyMSIsImZ1bGxOYW1lIjoiQnVkaSBTYW50b3NvIiwiaWQiOiI3YTU4NDI2Zi05MGMwLTRmZTMtOWU2YS1jNWRhMjk2YjI0NmUiLCJlbWFpbCI6ImJ1ZGlAc3R1ZGVudC51aS5hYy5pZCIsInN1YiI6ImJ1ZGlAc3R1ZGVudC51aS5hYy5pZCIsImlhdCI6MTc0ODE0NzAzMywiZXhwIjoxNzQ4MTUwNjMzfQ.BItbdMN6IMLOCblr3gq-9UtvMK40_Y1w-cqsregFTkI";
+
+    const token = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMjEwNjc1NDMyMSIsImZ1bGxOYW1lIjoiQnVkaSBTYW50b3NvIiwiaWQiOiI3YTU4NDI2Zi05MGMwLTRmZTMtOWU2YS1jNWRhMjk2YjI0NmUiLCJlbWFpbCI6ImJ1ZGlAc3R1ZGVudC51aS5hYy5pZCIsInN1YiI6ImJ1ZGlAc3R1ZGVudC51aS5hYy5pZCIsImlhdCI6MTc0ODE1MDc3NSwiZXhwIjoxNzQ4MTU0Mzc1fQ.Xy5Db4O1uI7DEByXw6m_pqUsAYHQpO2o3f7oOEyjlVc";
+
+    localStorage.setItem("token", token);
 
     // Fetch lowongan
     useEffect(() => {
@@ -81,99 +88,21 @@ export default function Mahasiswa() {
 
             {loadingLowongan && <p>Loading lowongan...</p>}
             {errorLowongan && <p style={{ color: "red" }}>Error: {errorLowongan}</p>}
-
             {!loadingLowongan && lowongans.length === 0 && <p>Lowongan tidak ditemukan.</p>}
 
-            {!loadingLowongan &&
-                lowongans.length > 0 &&
-                lowongans.map(({ lowongan, pendaftaranUser }) => (
-                    <div
-                        key={lowongan.lowonganId}
-                        style={{
-                            border: "1px solid #ccc",
-                            borderRadius: "8px",
-                            padding: "1rem",
-                            marginBottom: "1rem",
-                        }}
-                    >
-                        <h2
-                            onClick={() => toggleLogForLowongan(lowongan.lowonganId)}
-                            style={{
-                                cursor: "pointer",
-                                color: "#0070f3",
-                                textDecoration: "underline",
-                                marginBottom: "0.5rem",
-                            }}
-                            title="Klik untuk lihat log"
-                        >
-                            {lowongan.mataKuliah.nama} ({lowongan.mataKuliah.kode})
-                        </h2>
-                        <p><strong>Deskripsi:</strong> {lowongan.mataKuliah.deskripsi}</p>
-                        <p><strong>Tahun Ajaran:</strong> {lowongan.tahunAjaran}</p>
-                        <p><strong>Semester:</strong> {lowongan.semester}</p>
-
-                        {openLogId === lowongan.lowonganId && (
-                            <div style={{ marginTop: "1rem" }}>
-                                <h3>Log terkait pendaftaran:</h3>
-
-                                {loadingLogs && <p>Loading logs...</p>}
-                                {errorLogs && <p style={{ color: "red" }}>Error: {errorLogs}</p>}
-
-                                {!loadingLogs && !errorLogs && pendaftaranUser.length === 0 && (
-                                    <p>Tidak ada pendaftaran untuk lowongan ini.</p>
-                                )}
-
-                                {!loadingLogs &&
-                                    !errorLogs &&
-                                    pendaftaranUser.length > 0 &&
-                                    pendaftaranUser.map((pendaftaran) => {
-                                        const pendaftaranId = pendaftaran.pendaftaranId;
-                                        const logsForPendaftaran = groupedLogs[pendaftaranId] || [];
-
-                                        return (
-                                            <div key={pendaftaranId} style={{ marginBottom: "1rem" }}>
-                                                {logsForPendaftaran.length === 0 ? (
-                                                    <p>Tidak ada log untuk pendaftaran ini.</p>
-                                                ) : (
-                                                    <table
-                                                        style={{
-                                                            width: "100%",
-                                                            borderCollapse: "collapse",
-                                                        }}
-                                                    >
-                                                        <thead>
-                                                        <tr>
-                                                            <th style={thStyle}>Judul</th>
-                                                            <th style={thStyle}>Keterangan</th>
-                                                            <th style={thStyle}>Tanggal</th>
-                                                            <th style={thStyle}>Waktu Mulai</th>
-                                                            <th style={thStyle}>Waktu Selesai</th>
-                                                            <th style={thStyle}>Status</th>
-                                                            <th style={thStyle}>Pesan untuk Dosen</th>
-                                                        </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                        {logsForPendaftaran.map((log) => (
-                                                            <tr key={log.id} style={trStyle}>
-                                                                <td style={tdStyle}>{log.judul}</td>
-                                                                <td style={tdStyle}>{log.keterangan}</td>
-                                                                <td style={tdStyle}>{log.tanggalLog}</td>
-                                                                <td style={tdStyle}>{log.waktuMulai}</td>
-                                                                <td style={tdStyle}>{log.waktuSelesai}</td>
-                                                                <td style={tdStyle}>{log.status}</td>
-                                                                <td style={tdStyle}>{log.pesanUntukDosen}</td>
-                                                            </tr>
-                                                        ))}
-                                                        </tbody>
-                                                    </table>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                            </div>
-                        )}
-                    </div>
-                ))}
+            {!loadingLowongan && lowongans.map(({ lowongan, pendaftaranUser }) => (
+                <LogCard
+                    key={lowongan.lowonganId}
+                    lowongan={lowongan}
+                    pendaftaranUser={pendaftaranUser}
+                    pendaftaranId={pendaftaranUser[0].pendaftaranId}
+                    userId={pendaftaranUser[0].kandidat.id}
+                    groupedLogs={groupedLogs}
+                    toggleLog={toggleLogForLowongan}
+                    openLogId={openLogId}
+                    onLogCreated={handleLogCreated}
+                />
+            ))}
         </MahasiswaSidebar>
     );
 }
