@@ -27,7 +27,7 @@ export default function Mahasiswa() {
         );
     };
 
-    const token = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMjEwNjc1NDMyMSIsImZ1bGxOYW1lIjoiQnVkaSBTYW50b3NvIiwiaWQiOiI3YTU4NDI2Zi05MGMwLTRmZTMtOWU2YS1jNWRhMjk2YjI0NmUiLCJlbWFpbCI6ImJ1ZGlAc3R1ZGVudC51aS5hYy5pZCIsInN1YiI6ImJ1ZGlAc3R1ZGVudC51aS5hYy5pZCIsImlhdCI6MTc0ODE2MTkxOCwiZXhwIjoxNzQ4MTY1NTE4fQ.a3-ulwtmwFwDsSFbKWaQqC8Uu3Aye_QeJhODu-iTO_8";
+    const token = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMjEwNjc1NDMyMSIsImZ1bGxOYW1lIjoiQnVkaSBTYW50b3NvIiwiaWQiOiI3YTU4NDI2Zi05MGMwLTRmZTMtOWU2YS1jNWRhMjk2YjI0NmUiLCJlbWFpbCI6ImJ1ZGlAc3R1ZGVudC51aS5hYy5pZCIsInN1YiI6ImJ1ZGlAc3R1ZGVudC51aS5hYy5pZCIsImlhdCI6MTc0ODE2NTYwNywiZXhwIjoxNzQ4MTY5MjA3fQ.Jo_I7OJR_0yTGviIYWgaUeQlMUhaNCv9UCEB7d606iM";
 
     useEffect(() => {
         localStorage.setItem("token", token);
