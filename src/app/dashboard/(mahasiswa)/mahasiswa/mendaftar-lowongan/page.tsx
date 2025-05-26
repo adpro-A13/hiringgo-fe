@@ -3,41 +3,92 @@
 import MahasiswaSidebar from "@/components/dashboard/mahasiswa/sidebar";
 import ListLowongan from "@/components/manajemenlowongan/list-lowongan";
 import { useEffect, useState } from "react";
+import { useRouter } from 'next/navigation';
 
 
 export default function Mahasiswa(){
     const [lowonganData, setLowonganData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
     
-        useEffect(() => {
-            const fetchLowongan = async () => {
-                try {
-                    setIsLoading(true);
-                    const response = await fetch("/api/lowongandaftar/list",
-                        {
-                            method: "GET", 
-                            headers: {"Authorization": `Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDc4OTMzMjQsImV4cCI6MTc0Nzg5NjkyNH0.ftGf5jCY0_21oRqIa6zCLVAT9FXrZHvkEAxvsy43IIQ`,}
-                        }
-                    );
-    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
+    useEffect(() => {
+        const fetchLowongan = async () => {
+            try {
+                setIsLoading(true);
+                setError(null);
+                const response = await fetch("/api/lowongandaftar/list",
+                    {
+                        method: "GET", 
                     }
-    
-                    const data = await response.json();
-                    setLowonganData(data);
-                    setError(null);
-                } catch (err) {
-                    console.error("API Error:", err);
-                    setError(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
-                } finally {
-                    setIsLoading(false);
+                );
+
+                if (!response.ok) {
+                    let errorMessage = `HTTP error! Status: ${response.status}`;
+                    
+                    switch (response.status) {
+                        case 401:
+                            localStorage.removeItem('authToken');
+                            sessionStorage.removeItem('authToken');
+                            router.push('/login');
+                            return;
+                        case 403:
+                            // Decode token untuk dapat role dan redirect ke dashboard yang sesuai
+                            const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+                            if (token) {
+                                try {
+                                    const payload = JSON.parse(atob(token.split('.')[1]));
+                                    const userRole = payload.role;
+                                    
+                                    if (userRole === 'DOSEN') {
+                                        router.push('/dashboard/dosen');
+                                    } else if (userRole === 'ADMIN') {
+                                        router.push('/dashboard/admin');
+                                    } else if (userRole === 'MAHASISWA') {
+                                        router.push('/dashboard/mahasiswa');
+                                    } else {
+                                        router.push('/login'); // fallback jika role tidak dikenali
+                                    }
+                                } catch (e) {
+                                    router.push('/login'); // fallback jika token decode gagal
+                                }
+                            } else {
+                                router.push('/login'); // fallback jika tidak ada token
+                            }
+                            return;
+                        case 404:
+                            errorMessage = "Lowongan data not found";
+                            break;
+                        case 500:
+                            errorMessage = "Internal server error. Please try again later";
+                            break;
+                        default:
+                            errorMessage = `Request failed with status ${response.status}`;
+                    }
+                    
+                    throw new Error(errorMessage);
                 }
-            };
-    
-            fetchLowongan();
-        }, []);
+
+                const data = await response.json();
+                setLowonganData(data);
+                setError(null);
+            } catch (err) {
+                console.error("API Error:", err);
+                
+                if (err instanceof TypeError && err.message.includes('fetch')) {
+                    setError("Network error: Please check your internet connection");
+                } else if (err instanceof Error) {
+                    setError(err.message);
+                } else {
+                    setError("An unexpected error occurred. Please try again");
+                }
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchLowongan();
+    }, [router]);
     
         if (isLoading) {
             return <div className="p-8 text-center">Loading lowongan data...</div>;
