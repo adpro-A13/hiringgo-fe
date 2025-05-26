@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { fetcher } from '@/components/lib/fetcher'; // Adjust path as needed
 
 // Updated Types to match the actual JSON structure
 interface User {
@@ -34,40 +35,60 @@ interface Log {
     status: 'MENUNGGU' | 'DITERIMA' | 'DITOLAK';
 }
 
+interface CurrentUser {
+    id: string;
+    fullName: string;
+    email: string;
+    role: string;
+}
+
 const ManajemenLog = () => {
     const [logs, setLogs] = useState<Log[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [updating, setUpdating] = useState<string | null>(null);
-
-    const token = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiRE9TRU4iLCJuaXAiOiIxIiwiZnVsbE5hbWUiOiJkb3NlbjEiLCJpZCI6ImIyOTE0ZDhmLWVmOGYtNDFlMi1iNjgzLTYwMmI1NGM2OGY4ZCIsImVtYWlsIjoiZG9zZW4xQGVtYWlsLmNvbSIsInN1YiI6ImRvc2VuMUBlbWFpbC5jb20iLCJpYXQiOjE3NDgxNzEzNzgsImV4cCI6MTc0ODE3NDk3OH0.8Y7w1u8X1HioBKGbQK9xwF_uFh-ru5qenMoOcmuRa2Q";
-    const dosenId = "b2914d8f-ef8f-41e2-b683-602b54c68f8d";
+    const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
     useEffect(() => {
-        fetchLogs();
+        initializeComponent();
     }, []);
 
-    const fetchLogs = async () => {
+    const initializeComponent = async () => {
         try {
             setLoading(true);
             setError(null);
 
-            const response = await fetch(`http://localhost:8080/api/logs/dosen/${dosenId}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                }
-            });
+            // Get current user info first
+            await getCurrentUser();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Gagal memuat data pengguna');
+            setLoading(false);
+        }
+    };
 
-            if (!response.ok) {
-                throw new Error('Gagal mengambil data log');
+    const getCurrentUser = async () => {
+        try {
+            const userData = await fetcher<CurrentUser>('/api/auth/me');
+            setCurrentUser(userData);
+
+            // Once we have user data, fetch logs
+            await fetchLogs(userData.id);
+        } catch (err) {
+            throw new Error('Gagal mendapatkan informasi pengguna');
+        }
+    };
+
+    const fetchLogs = async (dosenId?: string) => {
+        try {
+            const userId = dosenId || currentUser?.id;
+            if (!userId) {
+                throw new Error('ID pengguna tidak ditemukan');
             }
 
-            const data = await response.json();
+            const data = await fetcher<Log[]>(`/api/logs/dosen/${userId}`);
             setLogs(data);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+            throw new Error(err instanceof Error ? err.message : 'Gagal mengambil data log');
         } finally {
             setLoading(false);
         }
@@ -78,27 +99,20 @@ const ManajemenLog = () => {
             setUpdating(logId);
             setError(null);
 
-            const response = await fetch(`http://localhost:8080/api/logs/${logId}/status`, {
+            await fetcher(`/api/logs/${logId}/status`, undefined, {
                 method: 'PATCH',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify(status)
             });
 
-            if (!response.ok) {
-                throw new Error('Gagal mengupdate status');
-            }
-
+            // Update local state
             setLogs(prevLogs =>
                 prevLogs.map(log =>
                     log.id === logId ? { ...log, status } : log
                 )
             );
 
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Gagal mengupdate status');
+        } catch (err: any) {
+            setError(err.message || 'Gagal mengupdate status');
         } finally {
             setUpdating(null);
         }
@@ -131,10 +145,17 @@ const ManajemenLog = () => {
         return timeString.substring(0, 5);
     };
 
+    const handleRetry = () => {
+        initializeComponent();
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-96">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <div className="text-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
+                    <p className="text-gray-600">Memuat data...</p>
+                </div>
             </div>
         );
     }
@@ -142,19 +163,31 @@ const ManajemenLog = () => {
     if (error) {
         return (
             <div className="p-6">
-                <div className="text-red-600 mb-4">{error}</div>
-                <Button onClick={fetchLogs}>Coba Lagi</Button>
+                <div className="text-center">
+                    <div className="text-red-600 mb-4">{error}</div>
+                    <Button onClick={handleRetry}>Coba Lagi</Button>
+                </div>
             </div>
         );
     }
 
     return (
         <div className="p-6">
-            <h1 className="text-2xl font-bold mb-6">Manajemen Log Asisten</h1>
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold">Manajemen Log Asisten</h1>
+                {currentUser && (
+                    <p className="text-gray-600 mt-1">
+                        Selamat datang, {currentUser.fullName}
+                    </p>
+                )}
+            </div>
 
             {logs.length === 0 ? (
                 <div className="text-center py-12">
                     <p className="text-gray-600">Tidak ada log yang tersedia</p>
+                    <Button onClick={handleRetry} className="mt-4" variant="outline">
+                        Refresh
+                    </Button>
                 </div>
             ) : (
                 <div className="space-y-4">
