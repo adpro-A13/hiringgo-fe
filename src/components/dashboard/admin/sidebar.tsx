@@ -37,6 +37,7 @@ import { Fragment, ReactNode, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+import { fetcher } from "@/components/lib/fetcher";
 
 interface SidebarItem {
   title: string;
@@ -91,22 +92,16 @@ export default function AdminSidebar({
       // Get token
       const token = getStoredToken();
       
-      // Fetch logout endpoint
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        }
-      });
+      try {
+        // Fetch logout endpoint using fetcher
+        const data = await fetcher<any>('/api/auth/logout', undefined, {
+          method: 'POST',
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Logout successful:', data.data.message);
-        toast.success(data.data.message || "Logout successful!");
-      } else {
-        console.log('⚠️ Logout API failed, continuing with client-side logout');
+        console.log('✅ Logout successful:', data.data?.message || data.message);
+        toast.success(data.data?.message || data.message || "Logout successful!");
+      } catch (error: any) {
+        console.log('⚠️ Logout API failed, continuing with client-side logout:', error);
         toast.success("Logged out successfully");
       }
 

@@ -64,26 +64,10 @@ export default function LowonganList() {
       
       console.log("Fetching from:", url);
       
-      // Make the request
-      const response = await fetch(url, {
+      // Make the request using fetcher
+      const data = await fetcher<any>(url, undefined, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          // Use cookies automatically
-        },
-        credentials: 'include',
       });
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          toast.error('Sesi anda telah berakhir');
-          router.push('/login');
-          return;
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
       
       // Success! Update the data state
       console.log("Data received:", data);
@@ -91,13 +75,23 @@ export default function LowonganList() {
         setLowonganList(data);
       } else if (data.data && Array.isArray(data.data)) {
         setLowonganList(data.data);
+      } else if (data.success && data.data && Array.isArray(data.data)) {
+        setLowonganList(data.data);
       } else {
         console.error("Unexpected data format:", data);
         toast.error("Format data tidak valid");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to load data:", error);
-      toast.error("Gagal mengambil data");
+      
+      if (error?.status === 401) {
+        toast.error('Sesi anda telah berakhir');
+        router.push('/login');
+        return;
+      }
+      
+      const errorMessage = error?.message || "Gagal mengambil data";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
       isLoadingRef.current = false;

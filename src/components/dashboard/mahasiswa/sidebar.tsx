@@ -58,7 +58,7 @@ const items = [
   {
     title: "Log Activities",
     icon: Clock,
-    url: "/dashboard/mahasiswa/log-activities",
+    url: "/dashboard/mahasiswa/manajemen-log",
   },
 ];
 

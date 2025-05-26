@@ -14,7 +14,7 @@ export const fetcher = async <T>(
     request?: NextRequest,
     options: RequestInit = {}
 ): Promise<T> => {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://34.206.227.118';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080';
 
     // For client-side requests, use Next.js API routes as proxy to avoid CORS issues
     let url: string;

@@ -1,91 +1,150 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import MahasiswaSidebar from "@/components/dashboard/mahasiswa/sidebar";
 import LogCard from "@/components/dashboard/mahasiswa/LogCard";
+import { fetcher } from "@/components/lib/fetcher";
+
+interface Kandidat {
+    id: string;
+    // Add other kandidat properties as needed
+}
+
+interface PendaftaranUser {
+    pendaftaranId: string;
+    kandidat: Kandidat;
+    // Add other pendaftaran properties as needed
+}
+
+interface Lowongan {
+    lowonganId: string;
+    // Add other lowongan properties as needed
+}
+
+interface LowonganWithPendaftaran {
+    lowongan: Lowongan;
+    pendaftaranUser: PendaftaranUser[];
+}
+
+interface Log {
+    id: string;
+    pendaftaran?: {
+        pendaftaranId: string;
+    };
+    // Add other log properties as needed
+}
 
 export default function Mahasiswa() {
-    const [lowongans, setLowongans] = useState([]);
-    const [logs, setLogs] = useState([]);
+    const [lowongans, setLowongans] = useState<LowonganWithPendaftaran[]>([]);
+    const [logs, setLogs] = useState<Log[]>([]);
     const [loadingLowongan, setLoadingLowongan] = useState(true);
     const [loadingLogs, setLoadingLogs] = useState(true);
-    const [errorLowongan, setErrorLowongan] = useState(null);
-    const [errorLogs, setErrorLogs] = useState(null);
-    const [openLogId, setOpenLogId] = useState(null);
+    const [errorLowongan, setErrorLowongan] = useState<string | null>(null);
+    const [errorLogs, setErrorLogs] = useState<string | null>(null);
+    const [openLogId, setOpenLogId] = useState<string | null>(null);
+    const [kandidatId, setKandidatId] = useState<string | null>(null);
+    const router = useRouter();
 
-    const handleLogCreated = (newLog) => {
+    const handleLogCreated = (newLog: Log) => {
         setLogs((prevLogs) => [...prevLogs, newLog]);
     };
 
-    const handleLogDeleted = (deletedId) => {
+    const handleLogDeleted = (deletedId: string) => {
         setLogs((prevLogs) => prevLogs.filter((log) => log.id !== deletedId));
     };
 
-    const handleLogEdited = (updatedLog) => {
+    const handleLogEdited = (updatedLog: Log) => {
         setLogs((prevLogs) =>
             prevLogs.map((log) => (log.id === updatedLog.id ? updatedLog : log))
         );
     };
 
-    const token = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMjEwNjc1NDMyMSIsImZ1bGxOYW1lIjoiQnVkaSBTYW50b3NvIiwiaWQiOiI3YTU4NDI2Zi05MGMwLTRmZTMtOWU2YS1jNWRhMjk2YjI0NmUiLCJlbWFpbCI6ImJ1ZGlAc3R1ZGVudC51aS5hYy5pZCIsInN1YiI6ImJ1ZGlAc3R1ZGVudC51aS5hYy5pZCIsImlhdCI6MTc0ODE2OTI1MCwiZXhwIjoxNzQ4MTcyODUwfQ.ovpHHuZahi1inguYEzrKdNgZD4apEbHs3hzfg19Y7tI";
+    // Fetch lowongan using fetcher
+    async function fetchLowongan() {
+        setLoadingLowongan(true);
+        try {
+            console.log("Fetching lowongan data...");
+            const data = await fetcher<LowonganWithPendaftaran[]>("/api/logs/listLowongan");
+            console.log("Lowongan data fetched:", data);
 
-    useEffect(() => {
-        localStorage.setItem("token", token);
-    }, [token]);
+            setLowongans(data);
+            setErrorLowongan(null);
 
-    // Fetch lowongan
-    useEffect(() => {
-        const fetchLowongan = async () => {
-            try {
-                const res = await fetch("http://localhost:8080/api/logs/listLowongan", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                });
-
-                if (!res.ok) throw new Error("Failed to fetch lowongan");
-
-                const data = await res.json();
-                setLowongans(data);
-            } catch (err) {
-                setErrorLowongan(err.message);
-            } finally {
-                setLoadingLowongan(false);
+            // Extract kandidatId from the first available pendaftaranUser
+            if (data.length > 0 && data[0].pendaftaranUser.length > 0) {
+                const extractedKandidatId = data[0].pendaftaranUser[0].kandidat.id;
+                setKandidatId(extractedKandidatId);
             }
-        };
+        } catch (err: any) {
+            console.error("Lowongan API Error:", err);
 
+            if (err.status === 401) {
+                toast.error("Session expired. Please login again.");
+                router.push('/login');
+                return;
+            } else if (err.status === 403) {
+                toast.error("You don't have permission to access this data.");
+                router.push('/login');
+                return;
+            }
+
+            const errorMsg = err.message || "Failed to fetch lowongan";
+            setErrorLowongan(errorMsg);
+            toast.error(errorMsg);
+        } finally {
+            setLoadingLowongan(false);
+        }
+    }
+
+    // Fetch logs using fetcher
+    async function fetchLogs(kandidatId: string) {
+        setLoadingLogs(true);
+        try {
+            console.log(`Fetching logs for kandidat: ${kandidatId}`);
+            const data = await fetcher<Log[]>(`/api/logs/user/${kandidatId}`);
+            console.log("Logs data fetched:", data);
+
+            setLogs(data);
+            setErrorLogs(null);
+        } catch (err: any) {
+            console.error("Logs API Error:", err);
+
+            if (err.status === 401) {
+                toast.error("Session expired. Please login again.");
+                router.push('/login');
+                return;
+            } else if (err.status === 403) {
+                toast.error("You don't have permission to access this data.");
+                router.push('/login');
+                return;
+            }
+
+            const errorMsg = err.message || "Failed to fetch logs";
+            setErrorLogs(errorMsg);
+            toast.error(errorMsg);
+        } finally {
+            setLoadingLogs(false);
+        }
+    }
+
+    // Initial data fetch
+    useEffect(() => {
         fetchLowongan();
-    }, [token]);
+    }, []);
 
-    // Fetch logs
+    // Fetch logs when kandidatId is available
     useEffect(() => {
-        const fetchLogs = async () => {
-            try {
-                const res = await fetch("http://localhost:8080/api/logs", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                });
-
-                if (!res.ok) throw new Error("Failed to fetch logs");
-
-                const data = await res.json();
-                setLogs(data);
-            } catch (err) {
-                setErrorLogs(err.message);
-            } finally {
-                setLoadingLogs(false);
-            }
-        };
-
-        fetchLogs();
-    }, [token]);
+        if (kandidatId) {
+            fetchLogs(kandidatId);
+        }
+    }, [kandidatId]);
 
     // Group logs by pendaftaranId for quick access
-    const groupLogsByPendaftaranId = (logs) => {
-        return logs.reduce((acc, log) => {
+    const groupLogsByPendaftaranId = (logs: Log[]) => {
+        return logs.reduce((acc: Record<string, Log[]>, log) => {
             const id = log.pendaftaran?.pendaftaranId || "UNKNOWN";
             if (!acc[id]) acc[id] = [];
             acc[id].push(log);
@@ -96,7 +155,7 @@ export default function Mahasiswa() {
     const groupedLogs = groupLogsByPendaftaranId(logs);
 
     // Toggle open log for a specific lowongan
-    const toggleLogForLowongan = (lowonganId) => {
+    const toggleLogForLowongan = (lowonganId: string) => {
         setOpenLogId(openLogId === lowonganId ? null : lowonganId);
     };
 
@@ -109,10 +168,19 @@ export default function Mahasiswa() {
     );
 
     // Error message component
-    const ErrorMessage = ({ message }) => (
+    const ErrorMessage = ({ message }: { message: string }) => (
         <div style={errorContainerStyle}>
             <div style={errorIconStyle}>⚠️</div>
             <p style={errorTextStyle}>Error: {message}</p>
+            <button
+                onClick={() => {
+                    if (errorLowongan) fetchLowongan();
+                    if (errorLogs && kandidatId) fetchLogs(kandidatId);
+                }}
+                style={retryButtonStyle}
+            >
+                Retry
+            </button>
         </div>
     );
 
@@ -121,7 +189,7 @@ export default function Mahasiswa() {
         <div style={emptyStateStyle}>
             <div style={emptyIconStyle}>📋</div>
             <h3 style={emptyTitleStyle}>Tidak Ada Lowongan</h3>
-            <p style={emptyDescriptionStyle}>Belum ada lowongan yang tersedia saat ini.</p>
+            <p style={emptyDescriptionStyle}>Belum ada lowongan yang menerima anda saat ini.</p>
         </div>
     );
 
@@ -155,6 +223,21 @@ export default function Mahasiswa() {
         };
     }, []);
 
+    // Show skeleton loading while fetching lowongan
+    if (loadingLowongan) {
+        return (
+            <MahasiswaSidebar>
+                <div style={containerStyle}>
+                    <div style={headerStyle}>
+                        <h1 style={titleStyle}>Log Asisten Dosen</h1>
+                        <p style={subtitleStyle}>Kelola dan pantau aktivitas sebagai asisten dosen</p>
+                    </div>
+                    <Skeleton className="h-96 w-full" />
+                </div>
+            </MahasiswaSidebar>
+        );
+    }
+
     return (
         <MahasiswaSidebar>
             <div style={containerStyle}>
@@ -164,13 +247,14 @@ export default function Mahasiswa() {
                 </div>
 
                 <div style={contentStyle}>
-                    {loadingLowongan && <LoadingSpinner />}
-
                     {errorLowongan && <ErrorMessage message={errorLowongan} />}
+                    {errorLogs && <ErrorMessage message={errorLogs} />}
 
-                    {!loadingLowongan && lowongans.length === 0 && <EmptyState />}
+                    {!errorLowongan && lowongans.length === 0 && <EmptyState />}
 
-                    {!loadingLowongan && lowongans.length > 0 && (
+                    {loadingLogs && kandidatId && <LoadingSpinner />}
+
+                    {!errorLowongan && lowongans.length > 0 && (
                         <div style={cardsContainerStyle}>
                             {lowongans.map(({ lowongan, pendaftaranUser }) => (
                                 <div key={lowongan.lowonganId} style={cardWrapperStyle}>
@@ -205,7 +289,7 @@ const containerStyle = {
 
 const headerStyle = {
     marginBottom: "32px",
-    textAlign: "center",
+    textAlign: "center" as const,
 };
 
 const titleStyle = {
@@ -232,7 +316,7 @@ const contentStyle = {
 
 const loadingContainerStyle = {
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "column" as const,
     alignItems: "center",
     justifyContent: "center",
     padding: "60px 20px",
@@ -259,6 +343,7 @@ const loadingTextStyle = {
 
 const errorContainerStyle = {
     display: "flex",
+    flexDirection: "column" as const,
     alignItems: "center",
     justifyContent: "center",
     padding: "24px",
@@ -270,18 +355,31 @@ const errorContainerStyle = {
 
 const errorIconStyle = {
     fontSize: "24px",
-    marginRight: "12px",
+    marginBottom: "12px",
 };
 
 const errorTextStyle = {
     color: "#dc2626",
     fontSize: "16px",
     fontWeight: "500",
-    margin: "0",
+    margin: "0 0 16px 0",
+    textAlign: "center" as const,
+};
+
+const retryButtonStyle = {
+    padding: "8px 16px",
+    backgroundColor: "#3b82f6",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "background-color 0.2s",
 };
 
 const emptyStateStyle = {
-    textAlign: "center",
+    textAlign: "center" as const,
     padding: "80px 20px",
     backgroundColor: "#ffffff",
     borderRadius: "16px",
@@ -309,7 +407,7 @@ const emptyDescriptionStyle = {
 
 const cardsContainerStyle = {
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "column" as const,
 };
 
 const cardWrapperStyle = {

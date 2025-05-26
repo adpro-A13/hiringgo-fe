@@ -40,7 +40,7 @@ const nextConfig: NextConfig = {
             return [
                 {
                     source: "/api/:path*",
-                    destination: "http://localhost:8080/api/:path*",
+                    destination: "http://34.206.227.118/api/:path*",
                 },
             ];
         }
@@ -60,7 +60,7 @@ const nextConfig: NextConfig = {
                     {
                         key: "Access-Control-Allow-Origin",
                         value: process.env.NODE_ENV === 'production' 
-                            ? process.env.ALLOWED_ORIGIN || "https://yourdomain.com"
+                            ? process.env.ALLOWED_ORIGIN || "http://127.0.0.1:8080"
                             : "*",
                     },
                     {

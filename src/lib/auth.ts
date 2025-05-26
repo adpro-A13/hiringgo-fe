@@ -20,7 +20,7 @@ export type LoginResponse = {
 };
 
 export async function login(email: string, password: string): Promise<LoginResponse> {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://34.206.227.118';
 
     const response = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',

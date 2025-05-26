@@ -1,8 +1,26 @@
 import { useState } from "react";
 import { Plus, Calendar, Clock, FileText, MessageSquare, Save, AlertCircle } from "lucide-react";
+import { fetcher } from "@/components/lib/fetcher";
+import { toast } from "sonner";
 
-export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
-    const [form, setForm] = useState({
+interface LogFormData {
+    judul: string;
+    kategori: string;
+    waktuMulai: string;
+    waktuSelesai: string;
+    tanggalLog: string;
+    keterangan: string;
+    pesanUntukDosen: string;
+}
+
+interface LogFormProps {
+    pendaftaranId: string;
+    userId: string;
+    onLogCreated: (log: any) => void;
+}
+
+export default function FormLog({ pendaftaranId, userId, onLogCreated }: LogFormProps) {
+    const [form, setForm] = useState<LogFormData>({
         judul: "",
         kategori: "ASISTENSI",
         waktuMulai: "",
@@ -13,13 +31,10 @@ export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
     });
 
     const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
-    const [timeError, setTimeError] = useState("");
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : "";
-
-    // Enhanced time validation function
-    const validateTimes = (startTime, endTime, date) => {
+    const [timeError, setTimeError] = useState("");    // Enhanced time validation function
+    const validateTimes = (startTime: string, endTime: string, date: string) => {
         if (!startTime || !endTime) return "";
 
         // Convert times to minutes for easier comparison
@@ -41,7 +56,7 @@ export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
         return "";
     };
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         const newForm = { ...form, [name]: value };
         setForm(newForm);
@@ -80,9 +95,7 @@ export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
         } else {
             return `${minutes} menit`;
         }
-    };
-
-    const handleSubmit = async (e) => {
+    };    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
         setError(null);
@@ -128,18 +141,11 @@ export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
         };
 
         try {
-            const res = await fetch("http://localhost:8080/api/logs", {
+            const data = await fetcher("/api/logs", undefined, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify(payload),
             });
 
-            if (!res.ok) throw new Error("Gagal membuat log.");
-
-            const data = await res.json();
             setForm({
                 judul: "",
                 kategori: "ASISTENSI",
@@ -152,11 +158,15 @@ export default function FormLog({ pendaftaranId, userId, onLogCreated }) {
 
             setSuccess(true);
             onLogCreated(data);
+            toast.success("Log berhasil dibuat!");
 
             // Auto-hide success message after 3 seconds
             setTimeout(() => setSuccess(false), 3000);
-        } catch (err) {
-            setError(err.message);
+        } catch (err: any) {
+            console.error("Create log error:", err);
+            const errorMsg = err.message || "Gagal membuat log";
+            setError(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setSubmitting(false);
         }

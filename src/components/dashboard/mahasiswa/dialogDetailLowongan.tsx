@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState, useEffect } from "react";
+import { fetcher } from "@/components/lib/fetcher";
 
 interface Lowongan {
   lowonganId: string;
@@ -73,16 +74,13 @@ export function DialogDetailLowongan({ lowongan, onApply, applicationStatus }: D
         const fetchStatus = async () => {
             try {
                 setLoading(true);
-                const token = localStorage.getItem('authToken');
-                const response = await fetch(`/api/lowongandaftar/${lowongan.lowonganId}/status`, {
-                    method: "GET"
-                  });
                 
-                if (response.ok) {
-                    const statusData = await response.json();
-                    setLocalStatus(statusData);
-                }
-            } catch (error) {
+                const statusData = await fetcher<any>(`/api/lowongandaftar/${lowongan.lowonganId}/status`, undefined, {
+                    method: "GET"
+                });
+                
+                setLocalStatus(statusData);
+            } catch (error: any) {
                 console.error("Error fetching application status:", error);
             } finally {
                 setLoading(false);
@@ -124,12 +122,8 @@ export function DialogDetailLowongan({ lowongan, onApply, applicationStatus }: D
           setError("SKS maksimal 24");
           setSubmitting(false);
           return;
-      }
-
-      try {
-          const token = localStorage.getItem('authToken');
-          
-          const response = await fetch(`/api/lowongandaftar/${lowongan.lowonganId}/daftar`, {
+      }        try {
+          const responseData = await fetcher<any>(`/api/lowongandaftar/${lowongan.lowonganId}/daftar`, undefined, {
               method: "POST",
               body: JSON.stringify({
                   ipk: parseFloat(formData.ipk),
@@ -137,38 +131,32 @@ export function DialogDetailLowongan({ lowongan, onApply, applicationStatus }: D
               })
           });
 
-          if (response.ok) {
-              const responseData = await response.json();
-              
-              // Success! Update status
-              setSuccess("Pendaftaran berhasil disubmit!");
-              setFormData({ ipk: "", sks: "" });
-              
-              // Update local status dengan data dari response
-              const newStatus = {
-                  hasApplied: true,
-                  status: "BELUM_DIPROSES",
-                  pendaftaranId: responseData.data.pendaftaran.pendaftaranId
-              };
+          // Success! Update status
+          setSuccess("Pendaftaran berhasil disubmit!");
+          setFormData({ ipk: "", sks: "" });
+          
+          // Update local status dengan data dari response
+          const newStatus = {
+              hasApplied: true,
+              status: "BELUM_DIPROSES",
+              pendaftaranId: responseData.data?.pendaftaran?.pendaftaranId || responseData.pendaftaran?.pendaftaranId
+          };
               
               setLocalStatus(newStatus);
               
               // Pass the application data to parent
               if (onApply) {
                   onApply({
-                      pendaftaranId: responseData.data.pendaftaran.pendaftaranId,
-                      lowonganId: responseData.data.pendaftaran.lowonganId,
+                      pendaftaranId: responseData.data?.pendaftaran?.pendaftaranId || responseData.pendaftaran?.pendaftaranId,
+                      lowonganId: responseData.data?.pendaftaran?.lowonganId || responseData.pendaftaran?.lowonganId,
                       status: "BELUM_DIPROSES"
                   });
               }
-          } else {
-              const errorData = await response.json();
-              setError(errorData.message || "Gagal mendaftar");
-          }
 
-      } catch (err) {
+      } catch (err: any) {
           console.error("Failed to submit application:", err);
-          setError(`${err instanceof Error ? err.message : "Unknown error"}`);
+          const errorMessage = err?.message || err?.data?.message || "Gagal mendaftar";
+          setError(errorMessage);
       } finally {
           setSubmitting(false);
       }
