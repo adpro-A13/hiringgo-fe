@@ -1,14 +1,43 @@
 import React, { useState } from "react";
 import { Edit, Trash2, Check, X, Calendar, Clock, Tag, ChevronDown, ChevronRight, AlertTriangle } from "lucide-react";
+import { fetcher } from "@/components/lib/fetcher";
+import { toast } from "sonner";
 
-export default function LogTable({ logs, onLogDeleted, onLogEdited }) {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : "";
-    const [editingLog, setEditingLog] = useState(null);
-    const [expandedLogs, setExpandedLogs] = useState(new Set());
-    const [editForm, setEditForm] = useState({});
-    const [loading, setLoading] = useState(null);
+interface Log {
+    id: string;
+    judul: string;
+    keterangan: string;
+    tanggalLog: string;
+    waktuMulai: string;
+    waktuSelesai: string;
+    kategori: string;
+    pesanUntukDosen: string;
+    status: 'MENUNGGU' | 'DITERIMA' | 'DITOLAK';
+}
+
+interface LogTableProps {
+    logs: Log[];
+    onLogDeleted: (id: string) => void;
+    onLogEdited: (log: Log) => void;
+}
+
+interface EditForm {
+    judul: string;
+    keterangan: string;
+    tanggalLog: string;
+    waktuMulai: string;
+    waktuSelesai: string;
+    kategori: string;
+    pesanUntukDosen: string;
+}
+
+export default function LogTable({ logs, onLogDeleted, onLogEdited }: LogTableProps) {
+    const [editingLog, setEditingLog] = useState<string | null>(null);
+    const [expandedLogs, setExpandedLogs] = useState(new Set<string>());
+    const [editForm, setEditForm] = useState<EditForm>({} as EditForm);
+    const [loading, setLoading] = useState<string | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [logToDelete, setLogToDelete] = useState(null);
+    const [logToDelete, setLogToDelete] = useState<string | null>(null);
     const [timeValidationError, setTimeValidationError] = useState("");
 
     const kategoriOptions = [
@@ -16,10 +45,8 @@ export default function LogTable({ logs, onLogDeleted, onLogEdited }) {
         { value: "MENGOREKSI", label: "Mengoreksi", icon: "✏️" },
         { value: "MENGAWAS", label: "Mengawas", icon: "👁️" },
         { value: "LAIN_LAIN", label: "Lainnya", icon: "📝" }
-    ];
-
-    // Time validation function for 24-hour format (HH:MM)
-    const validateTime = (startTime, endTime) => {
+    ];    // Time validation function for 24-hour format (HH:MM)
+    const validateTime = (startTime: string, endTime: string) => {
         if (!startTime || !endTime) return true; // Allow empty times
 
         // Parse time strings in HH:MM format
@@ -34,27 +61,24 @@ export default function LogTable({ logs, onLogDeleted, onLogEdited }) {
         return startMinutes < endMinutes;
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (id: string) => {
         setLogToDelete(id);
         setShowDeleteModal(true);
-    };
-
-    const confirmDelete = async () => {
+    };const confirmDelete = async () => {
         if (!logToDelete) return;
 
         setLoading(logToDelete);
         try {
-            const res = await fetch(`http://localhost:8080/api/logs/${logToDelete}`, {
+            await fetcher(`/api/logs/${logToDelete}`, undefined, {
                 method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
             });
-
-            if (!res.ok) throw new Error("Gagal menghapus log.");
+            
             onLogDeleted(logToDelete);
-        } catch (err) {
-            alert(err.message);
+            toast.success("Log berhasil dihapus");
+        } catch (err: any) {
+            console.error("Delete log error:", err);
+            const errorMsg = err.message || "Gagal menghapus log";
+            toast.error(errorMsg);
         } finally {
             setLoading(null);
             setShowDeleteModal(false);
@@ -65,9 +89,7 @@ export default function LogTable({ logs, onLogDeleted, onLogEdited }) {
     const cancelDelete = () => {
         setShowDeleteModal(false);
         setLogToDelete(null);
-    };
-
-    const handleEditClick = (log) => {
+    };    const handleEditClick = (log: Log) => {
         setEditingLog(log.id);
         setExpandedLogs(prev => new Set([...prev, log.id])); // Auto expand when editing
         setEditForm({
@@ -82,7 +104,7 @@ export default function LogTable({ logs, onLogDeleted, onLogEdited }) {
         setTimeValidationError("");
     };
 
-    const handleEditChange = (e) => {
+    const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         const newForm = { ...editForm, [name]: value };
         setEditForm(newForm);
@@ -98,9 +120,7 @@ export default function LogTable({ logs, onLogDeleted, onLogEdited }) {
                 setTimeValidationError("");
             }
         }
-    };
-
-    const handleEditSubmit = async (e, id) => {
+    };    const handleEditSubmit = async (e: React.FormEvent, id: string) => {
         e.preventDefault();
 
         // Final validation before submit
@@ -111,28 +131,23 @@ export default function LogTable({ logs, onLogDeleted, onLogEdited }) {
 
         setLoading(id);
         try {
-            const res = await fetch(`http://localhost:8080/api/logs/${id}`, {
+            const updatedLog = await fetcher<Log>(`/api/logs/${id}`, undefined, {
                 method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify(editForm),
             });
 
-            if (!res.ok) throw new Error("Gagal memperbarui log.");
-            const updatedLog = await res.json();
             onLogEdited(updatedLog);
             setEditingLog(null);
             setTimeValidationError("");
-        } catch (err) {
-            alert(err.message);
+            toast.success("Log berhasil diperbarui");
+        } catch (err: any) {
+            console.error("Update log error:", err);
+            const errorMsg = err.message || "Gagal memperbarui log";
+            toast.error(errorMsg);
         } finally {
             setLoading(null);
         }
-    };
-
-    const toggleExpand = (logId) => {
+    };    const toggleExpand = (logId: string) => {
         setExpandedLogs(prev => {
             const newSet = new Set(prev);
             if (newSet.has(logId)) {
@@ -144,14 +159,14 @@ export default function LogTable({ logs, onLogDeleted, onLogEdited }) {
         });
     };
 
-    const getStatusBadge = (status) => {
+    const getStatusBadge = (status: string) => {
         const statusColors = {
             'MENUNGGU': 'bg-yellow-100 text-yellow-800 border-yellow-200',
             'DITERIMA': 'bg-green-100 text-green-800 border-green-200',
             'DITOLAK': 'bg-red-100 text-red-800 border-red-200',
         };
 
-        const colorClass = statusColors[status] || 'bg-blue-100 text-blue-800 border-blue-200';
+        const colorClass = statusColors[status as keyof typeof statusColors] || 'bg-blue-100 text-blue-800 border-blue-200';
 
         return (
             <span className={`px-2 py-1 rounded-full text-xs font-medium border ${colorClass}`}>
@@ -160,7 +175,7 @@ export default function LogTable({ logs, onLogDeleted, onLogEdited }) {
         );
     };
 
-    const getKategoriBadge = (kategori) => {
+    const getKategoriBadge = (kategori: string) => {
         const kategoriOption = kategoriOptions.find(opt => opt.value === kategori);
         if (!kategoriOption) return null;
 
@@ -171,7 +186,7 @@ export default function LogTable({ logs, onLogDeleted, onLogEdited }) {
             'LAIN_LAIN': 'bg-gray-100 text-gray-800 border-gray-200'
         };
 
-        const colorClass = kategoriColors[kategori] || 'bg-gray-100 text-gray-800 border-gray-200';
+        const colorClass = kategoriColors[kategori as keyof typeof kategoriColors] || 'bg-gray-100 text-gray-800 border-gray-200';
 
         return (
             <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${colorClass}`}>
@@ -272,9 +287,11 @@ export default function LogTable({ logs, onLogDeleted, onLogEdited }) {
                                     <Clock className="w-3 h-3" />
                                     Waktu Selesai
                                 </div>
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            </th>                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Status
+                            </th>
+                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Aksi
                             </th>
                         </tr>
                         </thead>
@@ -359,10 +376,9 @@ export default function LogTable({ logs, onLogDeleted, onLogEdited }) {
                                                 {getStatusBadge(log.status)}
                                             </td>
                                             <td className="px-4 py-3">
-                                                <div className="flex gap-2 justify-center">
-                                                    <button
+                                                <div className="flex gap-2 justify-center">                                                    <button
                                                         onClick={(e) => handleEditSubmit(e, log.id)}
-                                                        disabled={loading === log.id || timeValidationError}
+                                                        disabled={loading === log.id || !!timeValidationError}
                                                         className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         <Check className="w-3 h-3" />
@@ -435,7 +451,7 @@ export default function LogTable({ logs, onLogDeleted, onLogEdited }) {
                                 {editingLog === log.id && timeValidationError && (
                                     <tr className="bg-red-50">
                                         <td></td>
-                                        <td colSpan="7" className="px-4 py-2">
+                                        <td colSpan={8} className="px-4 py-2">
                                             <div className="flex items-center gap-2 text-red-600 text-sm">
                                                 <AlertTriangle className="w-4 h-4" />
                                                 {timeValidationError}
@@ -448,18 +464,17 @@ export default function LogTable({ logs, onLogDeleted, onLogEdited }) {
                                 {expandedLogs.has(log.id) && (
                                     <tr className={`${editingLog === log.id ? 'bg-blue-50' : 'bg-gray-50'} border-t-0`}>
                                         <td></td>
-                                        <td colSpan="7" className="px-4 py-4">
+                                        <td colSpan={7} className="px-4 py-4">
                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                                         Keterangan
                                                     </label>
-                                                    {editingLog === log.id ? (
-                                                        <textarea
+                                                    {editingLog === log.id ? (                                                        <textarea
                                                             name="keterangan"
                                                             value={editForm.keterangan}
                                                             onChange={handleEditChange}
-                                                            rows="4"
+                                                            rows={4}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
                                                             placeholder="Masukkan keterangan"
                                                         />
@@ -474,12 +489,11 @@ export default function LogTable({ logs, onLogDeleted, onLogEdited }) {
                                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                                         Pesan untuk Dosen
                                                     </label>
-                                                    {editingLog === log.id ? (
-                                                        <textarea
+                                                    {editingLog === log.id ? (                                                        <textarea
                                                             name="pesanUntukDosen"
                                                             value={editForm.pesanUntukDosen}
                                                             onChange={handleEditChange}
-                                                            rows="4"
+                                                            rows={4}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
                                                             placeholder="Pesan untuk dosen"
                                                         />
