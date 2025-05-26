@@ -12,6 +12,7 @@ export default function Mahasiswa() {
     const [errorLowongan, setErrorLowongan] = useState(null);
     const [errorLogs, setErrorLogs] = useState(null);
     const [openLogId, setOpenLogId] = useState(null);
+    const [kandidatId, setKandidatId] = useState(null); // Add state for kandidatId
 
     const handleLogCreated = (newLog) => {
         setLogs((prevLogs) => [...prevLogs, newLog]);
@@ -27,7 +28,7 @@ export default function Mahasiswa() {
         );
     };
 
-    const token = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMjEwNjc1NDMyMSIsImZ1bGxOYW1lIjoiQnVkaSBTYW50b3NvIiwiaWQiOiI3YTU4NDI2Zi05MGMwLTRmZTMtOWU2YS1jNWRhMjk2YjI0NmUiLCJlbWFpbCI6ImJ1ZGlAc3R1ZGVudC51aS5hYy5pZCIsInN1YiI6ImJ1ZGlAc3R1ZGVudC51aS5hYy5pZCIsImlhdCI6MTc0ODE2OTI1MCwiZXhwIjoxNzQ4MTcyODUwfQ.ovpHHuZahi1inguYEzrKdNgZD4apEbHs3hzfg19Y7tI";
+    const token = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzNDU2Nzg5IiwidG9rZW5WZXJzaW9uIjowLCJmdWxsTmFtZSI6Ik5vYmVsIiwiaWQiOiIzZGU5ZWY4Yy1iMTYwLTRlYjctOTMxYy1mOTUwMGU3MDFmZjMiLCJlbWFpbCI6Im5vYmVsQHN0dWRlbnQudWkuYWMuaWQiLCJzdWIiOiJub2JlbEBzdHVkZW50LnVpLmFjLmlkIiwiaWF0IjoxNzQ4MjYxNTQ4LCJleHAiOjE3NDgyNjUxNDh9.CsEgD_KYjwI3FFeJosxFVpgSjfM7d509jALMNCLKzUw";
 
     useEffect(() => {
         localStorage.setItem("token", token);
@@ -48,6 +49,12 @@ export default function Mahasiswa() {
 
                 const data = await res.json();
                 setLowongans(data);
+
+                // Extract kandidatId from the first available pendaftaranUser
+                if (data.length > 0 && data[0].pendaftaranUser.length > 0) {
+                    const extractedKandidatId = data[0].pendaftaranUser[0].kandidat.id;
+                    setKandidatId(extractedKandidatId);
+                }
             } catch (err) {
                 setErrorLowongan(err.message);
             } finally {
@@ -58,11 +65,13 @@ export default function Mahasiswa() {
         fetchLowongan();
     }, [token]);
 
-    // Fetch logs
+    // Fetch logs - only run when kandidatId is available
     useEffect(() => {
+        if (!kandidatId) return; // Don't fetch if kandidatId is not available
+
         const fetchLogs = async () => {
             try {
-                const res = await fetch("http://localhost:8080/api/logs", {
+                const res = await fetch(`http://localhost:8080/api/logs/user/${kandidatId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
@@ -81,7 +90,7 @@ export default function Mahasiswa() {
         };
 
         fetchLogs();
-    }, [token]);
+    }, [token, kandidatId]); // Add kandidatId as dependency
 
     // Group logs by pendaftaranId for quick access
     const groupLogsByPendaftaranId = (logs) => {
@@ -121,7 +130,7 @@ export default function Mahasiswa() {
         <div style={emptyStateStyle}>
             <div style={emptyIconStyle}>📋</div>
             <h3 style={emptyTitleStyle}>Tidak Ada Lowongan</h3>
-            <p style={emptyDescriptionStyle}>Belum ada lowongan yang tersedia saat ini.</p>
+            <p style={emptyDescriptionStyle}>Belum ada lowongan yang menerima anda saat ini.</p>
         </div>
     );
 
@@ -167,6 +176,7 @@ export default function Mahasiswa() {
                     {loadingLowongan && <LoadingSpinner />}
 
                     {errorLowongan && <ErrorMessage message={errorLowongan} />}
+                    {errorLogs && <ErrorMessage message={errorLogs} />}
 
                     {!loadingLowongan && lowongans.length === 0 && <EmptyState />}
 
