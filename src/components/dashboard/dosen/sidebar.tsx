@@ -34,9 +34,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Link as LinkIcon, Home, LogOut, Loader, List, TowerControlIcon, Loader2 } from "lucide-react";
 import { Fragment, ReactNode, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+import { fetcher } from "@/components/lib/fetcher";
 
 interface SidebarItem {
   title: string;
@@ -65,6 +66,7 @@ export default function DosenSidebar({
   children,
 }: DosenSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
@@ -78,7 +80,7 @@ export default function DosenSidebar({
     };
   });
 
-  // Logout handler
+  // Updated logout handler using fetcher
   const handleLogout = async () => {
     if (isLoggingOut) return;
     
@@ -88,28 +90,13 @@ export default function DosenSidebar({
     try {
       toast.info("Logging out...");
       
-      // Get token
-      const token = getStoredToken();
-      
-      // Fetch logout endpoint
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        }
+      // Using fetcher instead of direct fetch - it automatically handles auth
+      const response = await fetcher('/api/auth/logout', undefined, {
+        method: 'POST'
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Logout successful:', data.data.message);
-        toast.success(data.data.message || "Logout successful!");
-      } else {
-        console.log('⚠️ Logout API failed, continuing with client-side logout');
-        toast.success("Logged out successfully");
-      }
-
+      
+      toast.success(response?.message || "Logout successful!");
+      
     } catch (error) {
       console.error('❌ Logout error:', error);
       toast.success("Logged out successfully");
@@ -118,31 +105,9 @@ export default function DosenSidebar({
       clearClientAuth();
       setIsLoggingOut(false);
       
-      // Redirect
-      window.location.href = '/login';
+      // Use router instead of direct window location change
+      router.push('/login');
     }
-  };
-
-  const getStoredToken = (): string | null => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('authToken') || 
-             sessionStorage.getItem('authToken') || 
-             getCookieToken();
-    }
-    return null;
-  };
-
-  const getCookieToken = (): string | null => {
-    if (typeof document === 'undefined') return null;
-    
-    const cookies = document.cookie.split(';');
-    for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'authToken' || name === 'token') {
-        return value;
-      }
-    }
-    return null;
   };
 
   const clearClientAuth = (): void => {
