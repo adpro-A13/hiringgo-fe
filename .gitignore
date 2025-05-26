@@ -40,4 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+<<<<<<< HEAD
 .vscode
+=======
+### IntelliJ IDEA ###
+.idea
+>>>>>>> af29b012d226a731faf1931db0dc59504e4d2ea3
