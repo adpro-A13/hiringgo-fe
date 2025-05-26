@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
 import { setTokenCookie } from "@/lib/auth-utils";
+import { fetcher } from "@/components/lib/fetcher";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -37,62 +38,43 @@ export default function LoginPage() {
             setError("Please enter both email and password");
             setIsLoading(false);
             return;
-        }
-
-        try {
+        }        try {
             console.log("Attempting login with:", { email: formData.email, rememberMe: formData.rememberMe });
 
-            const response = await fetch(`/api/auth/login`, {
+            const data = await fetcher<any>("/api/auth/login", undefined, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
                 body: JSON.stringify({
                     email: formData.email,
                     password: formData.password,
                     rememberMe: formData.rememberMe,
                 }),
-                credentials: "include",
-            });
+            });            console.log("Login response:", data);
 
-            if (!response.ok) {
-                console.error(`Server error: ${response.status} ${response.statusText}`);
-                const errorData = await response.text(); let errorMsg = `Server error: ${response.status}`;
-                try {
-                    const errorJson = JSON.parse(errorData);
-                    console.error("Error details:", errorJson);
-                    errorMsg = errorJson.error ?? errorJson.message ?? errorMsg;
-                } catch {
-                    console.error("Error response is not JSON:", errorData.substring(0, 200));
-                }
-
-                throw new Error(errorMsg);
-            }
-            let data;
-            const contentType = response.headers.get("content-type");
-            if (contentType?.includes("application/json")) {
-                try {
-                    data = await response.json();
-                    console.log("Login response:", data);
-                } catch (jsonError) {
-                    console.error("Failed to parse JSON response:", jsonError);
-                    throw new Error("Invalid JSON response from server. Please try again.");
-                }
-            } else {
-                const textResponse = await response.text();
-                console.error("Non-JSON response (first 500 chars):", textResponse.substring(0, 500));
-                console.error("Response status:", response.status, response.statusText); console.error("Response headers:", Object.fromEntries([...response.headers]));
-                throw new Error("Server returned non-JSON response. Please check server configuration.");
+            // Handle different response formats
+            let token, user;
+            
+            if (data.success && data.data?.token && data.data?.user) {
+                // Format: { success: true, data: { token: "...", user: {...} } }
+                token = data.data.token;
+                user = data.data.user;
+            } else if (data.token && data.user) {
+                // Format: { token: "...", user: {...} }
+                token = data.token;
+                user = data.user;
+            } else if (data.success && data.token && data.user) {
+                // Format: { success: true, token: "...", user: {...} }
+                token = data.token;
+                user = data.user;
             }
 
-            if (response.ok && data.token && data.user) {
-                console.log('Login successful with token:', data.token.substring(0, 20) + '...');
+            if (token && user) {
+                console.log('Login successful with token:', token.substring(0, 20) + '...');
                 toast.success("Login successful! Welcome back.");
 
                 const maxAge = formData.rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60;
-                setTokenCookie(data.token, maxAge);
+                setTokenCookie(token, maxAge);
 
-                const userRole = data.user.role;
+                const userRole = user.role;
                 let redirectPath = '/dashboard';
                 if (userRole === 'ADMIN') {
                     redirectPath = '/dashboard/admin';
@@ -104,15 +86,35 @@ export default function LoginPage() {
 
                 router.push(redirectPath);
             } else {
-                const errorMessage = data.message ?? data.error ?? "Invalid credentials";
+                const errorMessage = data.error ?? data.message ?? "Invalid credentials";
                 setError(errorMessage);
                 toast.error(errorMessage);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Login error:", error);
-            const errorMessage = error instanceof Error
-                ? error.message
-                : "Connection error. Please try again later.";
+            
+            let errorMessage: string;
+            if (error?.status) {
+                // Handle specific HTTP status codes
+                switch (error.status) {
+                    case 401:
+                        errorMessage = "Invalid email or password";
+                        break;
+                    case 403:
+                        errorMessage = "Account access denied";
+                        break;
+                    case 404:
+                        errorMessage = "Login service not found";
+                        break;
+                    case 500:
+                        errorMessage = "Server error. Please try again later";
+                        break;
+                    default:
+                        errorMessage = error.message || `Server error (${error.status})`;
+                }
+            } else {
+                errorMessage = error?.message || "Connection error. Please try again later.";
+            }
 
             setError(errorMessage);
             toast.error(errorMessage);

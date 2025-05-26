@@ -60,7 +60,7 @@ const nextConfig: NextConfig = {
                     {
                         key: "Access-Control-Allow-Origin",
                         value: process.env.NODE_ENV === 'production' 
-                            ? process.env.ALLOWED_ORIGIN || "https://yourdomain.com"
+                            ? process.env.ALLOWED_ORIGIN || "http://127.0.0.1:8080"
                             : "*",
                     },
                     {

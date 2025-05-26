@@ -3,7 +3,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
 import MahasiswaSidebar from "@/components/dashboard/mahasiswa/sidebar";
 import MahasiswaPage from "@/components/dashboard/mahasiswa/mahasiswapage";
-import router from "next/router";
+import { useRouter } from "next/navigation";
+import { fetcher } from "@/components/lib/fetcher";
 
 interface Lowongan {
   lowonganId: string;
@@ -41,6 +42,7 @@ interface MahasiswaDashboardData {
 }
 
 export default function MahasiswaDashboard() {
+    const router = useRouter();
     const [dashboardData, setDashboardData] = useState<MahasiswaDashboardData>({
         userRole: "",
         username: "",
@@ -71,19 +73,34 @@ export default function MahasiswaDashboard() {
                 setIsLoading(true);
                 setError(null); // Reset error state
                 
-                const response = await fetch("/api/dashboard/mahasiswa", {
-                    method: "GET", 
+                const data = await fetcher<any>("/api/dashboard/mahasiswa", undefined, {
+                    method: "GET",
                 });
 
-                // Enhanced error handling based on status codes
-                if (!response.ok) {
-                    let errorMessage = `HTTP error! Status: ${response.status}`;
-                    
-                    switch (response.status) {
+                console.log("Mahasiswa dashboard response:", data);
+
+                // Check if we received valid dashboard data
+                if (data && data.userRole) {
+                    setDashboardData(data);
+                    setError(null);
+                } else if (data.success === false) {
+                    // Handle wrapped error response
+                    const errorMessage = data.error ?? data.message ?? "Failed to load dashboard data";
+                    setError(errorMessage);
+                } else {
+                    // Handle unexpected response format
+                    setError("Invalid response format received from server");
+                }
+                
+            } catch (err: any) {
+                console.error("API Error:", err);
+                
+                let errorMessage: string;
+                if (err?.status) {
+                    switch (err.status) {
                         case 401:
                             localStorage.removeItem('authToken');
                             sessionStorage.removeItem('authToken');
-        
                             router.push('/login');
                             return;
                         case 403:
@@ -96,38 +113,13 @@ export default function MahasiswaDashboard() {
                             errorMessage = "Internal server error. Please try again later";
                             break;
                         default:
-                            errorMessage = `Request failed with status ${response.status}`;
+                            errorMessage = err.message || `Server error (${err.status})`;
                     }
-                    
-                    throw new Error(errorMessage);
-                }
-
-                const data = await response.json();
-                
-                // Validate response data structure
-                if (!data || typeof data !== 'object') {
-                    throw new Error("Invalid response format received from server");
-                }
-
-                // Additional validation for required fields
-                if (!data.userRole || !data.username) {
-                    throw new Error("Incomplete dashboard data received");
-                }
-
-                setDashboardData(data);
-                setError(null);
-                
-            } catch (err) {
-                console.error("API Error:", err);
-                
-                // More specific error handling
-                if (err instanceof TypeError && err.message.includes('fetch')) {
-                    setError("Network error: Please check your internet connection");
-                } else if (err instanceof Error) {
-                    setError(err.message);
                 } else {
-                    setError("An unexpected error occurred. Please try again");
+                    errorMessage = err?.message || "Network error: Please check your internet connection";
                 }
+
+                setError(errorMessage);
             } finally {
                 setIsLoading(false);
             }

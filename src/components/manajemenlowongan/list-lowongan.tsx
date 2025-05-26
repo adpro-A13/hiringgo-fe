@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { toast as sonnerToast } from "sonner";
 import dynamic from "next/dynamic";
+import { fetcher } from "@/components/lib/fetcher";
 
 interface Lowongan {
     lowonganId: string;
@@ -74,21 +75,19 @@ export default function ListLowongan({ data }: { data: Lowongan[] }) {
     const fetchApplicationStatus = async (lowonganId: string) => {
         try {
             setLoadingStatus(prev => ({ ...prev, [lowonganId]: true }));
-            const token = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDgxNDMxMjIsImV4cCI6MTc0ODE0NjcyMn0.dTpi0lVrmmog8zK7WTbZP9dn37_pwlEv2aFjst2Ep1s";
-            const response = await fetch(`/api/lowongandaftar/${lowonganId}/status`, {
-                method: "GET",
-        });
             
-            if (response.ok) {
-                const statusData = await response.json();
-                setApplicationStatus(prev => ({
-                    ...prev,
-                    [lowonganId]: statusData.data.application_status
-                }));
-                console.log("Application status fetched:", statusData);
-            }
-        } catch (error) {
+            const statusData = await fetcher<any>(`/api/lowongandaftar/${lowonganId}/status`, undefined, {
+                method: "GET",
+            });
+            
+            setApplicationStatus(prev => ({
+                ...prev,
+                [lowonganId]: statusData.data?.application_status || statusData.application_status
+            }));
+            console.log("Application status fetched:", statusData);
+        } catch (error: any) {
             console.error("Error fetching application status:", error);
+            // Don't show error toast for status checks as it's not critical
         } finally {
             setLoadingStatus(prev => ({ ...prev, [lowonganId]: false }));
         }
