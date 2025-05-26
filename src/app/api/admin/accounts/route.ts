@@ -27,7 +27,7 @@ export async function OPTIONS(request: NextRequest) {
 
 async function handleRequest(request: NextRequest, method: string) {
     // Use HTTP for the backend URL (not HTTPS)
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://34.206.227.118';
     const url = `${backendUrl}/api/admin/accounts`;
 
     console.log(`[Admin API] Forwarding ${method} request to ${url}`);
