@@ -2,10 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import AdminSidebar from "@/components/dashboard/dosen/sidebar"; // <-- Tambahkan sidebar
+import AdminSidebar from "@/components/dashboard/dosen/sidebar"; 
+import { fetcher } from "@/components/lib/fetcher";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 export default function CreateLowonganPage() {
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [form, setForm] = useState({
     idMataKuliah: "",
@@ -30,25 +34,25 @@ export default function CreateLowonganPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setIsSubmitting(true);
 
     try {
-      const res = await fetch("http://localhost:8080/api/lowongan", {
+      // Using fetcher instead of direct fetch with hardcoded token
+      await fetcher('/api/lowongan', undefined, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiRE9TRU4iLCJuaXAiOiIyMzA2MjE0OTkwIiwiZnVsbE5hbWUiOiJkb3NlbiIsImlkIjoiMzdlNGRjOWEtMmZlYy00MWE1LWFlOTgtMmRkNjcxODdjMTFjIiwiZW1haWwiOiJkb3NlbkBleGFtcGxlLmNvbSIsInN1YiI6ImRvc2VuQGV4YW1wbGUuY29tIiwiaWF0IjoxNzQ4MTUwNzk0LCJleHAiOjE3NDgxNTQzOTR9.gs3HqM1dOjQUhGgFbT-Qi7-oBFJOuDVUDX729MS7WFg`,
-        },
         body: JSON.stringify(form),
       });
-
-      if (!res.ok) {
-        const msg = await res.text();
-        throw new Error(msg || `Error ${res.status}`);
-      }
-
+      
+      toast.success("Lowongan berhasil dibuat!");
       router.push("/dashboard/dosen/manajemen-lowongan");
     } catch (err: any) {
-      setError(err.message || "Terjadi kesalahan.");
+      console.error("Error creating lowongan:", err);
+      
+      const errorMsg = err.message || "Terjadi kesalahan saat membuat lowongan.";
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -69,6 +73,7 @@ export default function CreateLowonganPage() {
               onChange={handleChange}
               required
               className="w-full border p-2 rounded"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -82,6 +87,7 @@ export default function CreateLowonganPage() {
               placeholder="Contoh: 2024/2025"
               required
               className="w-full border p-2 rounded"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -92,6 +98,7 @@ export default function CreateLowonganPage() {
               value={form.semester}
               onChange={handleChange}
               className="w-full border p-2 rounded"
+              disabled={isSubmitting}
             >
               <option value="GANJIL">Ganjil</option>
               <option value="GENAP">Genap</option>
@@ -109,6 +116,7 @@ export default function CreateLowonganPage() {
               onChange={handleChange}
               required
               className="w-full border p-2 rounded"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -117,14 +125,23 @@ export default function CreateLowonganPage() {
               type="button"
               className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
               onClick={() => router.push("/dashboard/dosen/manajemen-lowongan")}
+              disabled={isSubmitting}
             >
               Batal
             </button>
             <button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center justify-center min-w-[100px]"
+              disabled={isSubmitting}
             >
-              Buat Lowongan
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Menyimpan...
+                </>
+              ) : (
+                "Buat Lowongan"
+              )}
             </button>
           </div>
         </form>

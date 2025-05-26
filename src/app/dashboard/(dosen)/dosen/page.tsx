@@ -3,6 +3,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
 import DosenSidebar from "@/components/dashboard/dosen/sidebar";
 import DosenPage from "@/components/dashboard/dosen/dosenpage";
+import { fetcher } from "@/components/lib/fetcher";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface Course {
   kode: string;
@@ -68,41 +71,61 @@ export default function DosenDashboard() {
     
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
     
     useEffect(() => {
-        const fetchDosenData = async () => {
-            try {
-                setIsLoading(true);
-                const response = await fetch("/api/dashboard/dosen", {
-                    method: "GET", 
-                    headers: { "Content-Type": "application/json" ,
-                        "Authorization": `Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiRE9TRU4iLCJuaXAiOiIyMzA2MjE0OTkwIiwiZnVsbE5hbWUiOiJkb3NlbiIsImlkIjoiMzdlNGRjOWEtMmZlYy00MWE1LWFlOTgtMmRkNjcxODdjMTFjIiwiZW1haWwiOiJkb3NlbkBleGFtcGxlLmNvbSIsInN1YiI6ImRvc2VuQGV4YW1wbGUuY29tIiwiaWF0IjoxNzQ4MTUwNzk0LCJleHAiOjE3NDgxNTQzOTR9.gs3HqM1dOjQUhGgFbT-Qi7-oBFJOuDVUDX729MS7WFg`
-                    },
-                });
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                setDashboardData(data);
-                setError(null);
-            } catch (err) {
-                console.error("API Error:", err);
-                setError(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchDosenData();
     }, []);
+
+    async function fetchDosenData() {
+        setIsLoading(true);
+        try {
+            console.log("Fetching dosen dashboard data...");
+            const data = await fetcher<DosenDashboardData>("/api/dashboard/dosen");
+            console.log("Dosen dashboard data fetched:", data);
+            
+            setDashboardData(data);
+            setError(null);
+        } catch (err: any) {
+            console.error("API Error:", err);
+            
+            if (err.status === 401) {
+                toast.error("Session expired. Please login again.");
+                router.push('/login');
+                return;
+            } else if (err.status === 403) {
+                toast.error("You don't have permission to access this dashboard.");
+                router.push('/login');
+                return;
+            }
+            
+            const errorMsg = err.message || "Failed to load dashboard data";
+            setError(errorMsg);
+            toast.error(errorMsg);
+            
+            // Provide fallback data for development/testing if needed
+            // setDashboardData({...});
+        } finally {
+            setIsLoading(false);
+        }
+    }
     
     if (isLoading) {
         return <Skeleton className="h-96 w-full" />;
     }
     
     if (error) {
-        return <div className="p-8 text-red-500 text-center">{error}</div>;
+        return (
+            <div className="p-8 text-center">
+                <div className="text-red-500 mb-4">{error}</div>
+                <button 
+                    onClick={() => fetchDosenData()} 
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                    Retry
+                </button>
+            </div>
+        );
     }
 
     return(
