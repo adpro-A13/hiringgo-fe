@@ -183,7 +183,7 @@ export default function MahasiswaPage({ dashboardData }: { dashboardData: Mahasi
       {/* Accepted Positions */}
       <div className="mb-8">
         <h3 className="text-xl font-semibold mb-4">Posisi Asisten Diterima</h3>
-        {dashboardData.acceptedLowongan.length > 0 ? (
+        {dashboardData.acceptedLowongan?.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {dashboardData.acceptedLowongan.map((lowongan, index) => (
               <Card key={index} className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">

@@ -54,7 +54,6 @@ export default function ListLowongan({ data }: { data: Lowongan[] }) {
     }>({});
 
     useEffect(() => {
-        // Group lowongan by tahunAjaran and semester
         const grouped = data.reduce((acc, lowongan) => {
             const key = `${lowongan.semester} ${lowongan.tahunAjaran}`;
             if (!acc[key]) {
@@ -75,19 +74,18 @@ export default function ListLowongan({ data }: { data: Lowongan[] }) {
     const fetchApplicationStatus = async (lowonganId: string) => {
         try {
             setLoadingStatus(prev => ({ ...prev, [lowonganId]: true }));
-            const token = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDc4OTMzMjQsImV4cCI6MTc0Nzg5NjkyNH0.ftGf5jCY0_21oRqIa6zCLVAT9FXrZHvkEAxvsy43IIQ";
+            const token = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiTUFIQVNJU1dBIiwibmltIjoiMTIzMzIxMiIsImZ1bGxOYW1lIjoibWhzMSIsImlkIjoiY2QwMGIwMDctYTAzMC00NDI1LTk0ODgtZGZhODMwYzE0OTBhIiwiZW1haWwiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJzdWIiOiJhYWEyMTIyMUBnbWFpbC5jb20iLCJpYXQiOjE3NDgxNDMxMjIsImV4cCI6MTc0ODE0NjcyMn0.dTpi0lVrmmog8zK7WTbZP9dn37_pwlEv2aFjst2Ep1s";
             const response = await fetch(`/api/lowongandaftar/${lowonganId}/status`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            });
+                method: "GET",
+        });
             
             if (response.ok) {
                 const statusData = await response.json();
                 setApplicationStatus(prev => ({
                     ...prev,
-                    [lowonganId]: statusData
+                    [lowonganId]: statusData.data.application_status
                 }));
+                console.log("Application status fetched:", statusData);
             }
         } catch (error) {
             console.error("Error fetching application status:", error);
@@ -97,13 +95,11 @@ export default function ListLowongan({ data }: { data: Lowongan[] }) {
     };
 
     const handleApply = (lowongan: Lowongan) => {
-        // Refresh the status after successful application
         sonnerToast.success("Pendaftaran berhasil", {
             description: `Anda telah mendaftar untuk lowongan ${lowongan.namaMataKuliah}`,
             duration: 3000
         });
         
-        // Refresh the application status
         fetchApplicationStatus(lowongan.lowonganId);
     };
     

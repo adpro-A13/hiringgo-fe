@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
+import { logout } from "@/lib/auth-utils";
 
 export default function NavBar() {
     const [isLowonganOpen, setIsLowonganOpen] = useState(false);
@@ -126,9 +126,12 @@ export default function NavBar() {
                                     <Link href="/settings" className="block px-4 py-2 hover:bg-gray-100">
                                         Settings
                                     </Link>
-                                    <Link href="/logout" className="block px-4 py-2 hover:bg-gray-100">
+                                    <button 
+                                        onClick={logout}
+                                        className="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+                                    >
                                         Logout
-                                    </Link>
+                                    </button>
                                 </div>
                             )}
                         </div>

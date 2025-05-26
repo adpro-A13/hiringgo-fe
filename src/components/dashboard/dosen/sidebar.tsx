@@ -21,11 +21,23 @@ import {
   BreadcrumbList, 
   BreadcrumbSeparator 
 } from "@/components/ui/breadcrumb";
-import { Link as LinkIcon, Home, LogOut, Loader, List, TowerControlIcon } from "lucide-react";
-import { Fragment, ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Link as LinkIcon, Home, LogOut, Loader, List, TowerControlIcon, Loader2 } from "lucide-react";
+import { Fragment, ReactNode, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-
+import { toast } from "sonner";
+import { fetcher } from "@/components/lib/fetcher";
 
 interface SidebarItem {
   title: string;
@@ -36,6 +48,7 @@ interface SidebarItem {
 interface DosenSidebarProps {
   children: ReactNode;
 }
+
 const items = [
   {
     title: "Manajemen Lowongan",
@@ -48,10 +61,14 @@ const items = [
     url: "/dashboard/dosen/manajemen-log",
   },
 ];
+
 export default function DosenSidebar({
   children,
 }: DosenSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const pathSegments = pathname.slice(1).split("/");
   const routesList = pathSegments.map((segment, index) => {
@@ -62,6 +79,51 @@ export default function DosenSidebar({
       url: url,
     };
   });
+
+  // Updated logout handler using fetcher
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    
+    setIsLoggingOut(true);
+    setLogoutDialogOpen(false);
+    
+    try {
+      toast.info("Logging out...");
+      
+      // Using fetcher instead of direct fetch - it automatically handles auth
+      const response = await fetcher('/api/auth/logout', undefined, {
+        method: 'POST'
+      });
+      
+      toast.success(response?.message || "Logout successful!");
+      
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+      toast.success("Logged out successfully");
+    } finally {
+      // Always clear client-side auth
+      clearClientAuth();
+      setIsLoggingOut(false);
+      
+      // Use router instead of direct window location change
+      router.push('/login');
+    }
+  };
+
+  const clearClientAuth = (): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('authToken');
+      sessionStorage.removeItem('authToken');
+      localStorage.removeItem('userInfo');
+      localStorage.removeItem('token');
+    }
+    
+    if (typeof document !== 'undefined') {
+      document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    }
+  };
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -109,6 +171,61 @@ export default function DosenSidebar({
                     </SidebarMenuItem>
                   );
                 })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          {/* Logout Button Section */}
+          <SidebarGroup className="mt-auto">
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+                    <AlertDialogTrigger asChild>
+                      <SidebarMenuButton
+                        className="hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"
+                        disabled={isLoggingOut}
+                      >
+                        {isLoggingOut ? (
+                          <>
+                            <Loader2 className="animate-spin" />
+                            <span>Logging out...</span>
+                          </>
+                        ) : (
+                          <>
+                            <LogOut />
+                            <span>Logout</span>
+                          </>
+                        )}
+                      </SidebarMenuButton>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          You will be redirected to the login page and will need to sign in again to access your account.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={handleLogout}
+                          disabled={isLoggingOut}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          {isLoggingOut ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Logging out...
+                            </>
+                          ) : (
+                            "Logout"
+                          )}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
