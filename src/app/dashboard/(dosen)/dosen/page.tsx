@@ -78,10 +78,6 @@ export default function DosenDashboard() {
                 
                 const response = await fetch("/api/dashboard/dosen", {
                     method: "GET", 
-                    headers: {
-                        "Authorization": `Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiRE9TRU4iLCJuaXAiOiIxMTEiLCJmdWxsTmFtZSI6ImRvc2VuMSIsImlkIjoiZDBjN2E4MjAtYjk1ZS00ODFkLTkyY2UtZjgyY2FkNTUyNzJhIiwiZW1haWwiOiJqYXdhQGdtYWlsLmNvbSIsInN1YiI6Imphd2FAZ21haWwuY29tIiwiaWF0IjoxNzQ4MDc3NDQ0LCJleHAiOjE3NDgwODEwNDR9.NRPPDaNOnwI3cTgHCM2v2AceyN70_c-kSH53EemYXM8`,
-                        "Content-Type": "application/json"
-                    }
                 });
 
                 // Enhanced error handling based on status codes
