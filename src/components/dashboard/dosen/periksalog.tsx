@@ -42,6 +42,17 @@ interface CurrentUser {
     role: string;
 }
 
+// JWT Token payload interface
+interface JWTPayload {
+    id: string;
+    email: string;
+    role: string;
+    fullName?: string;
+    sub: string;
+    exp: number;
+    iat: number;
+}
+
 const ManajemenLog = () => {
     const [logs, setLogs] = useState<Log[]>([]);
     const [loading, setLoading] = useState(true);
@@ -58,34 +69,62 @@ const ManajemenLog = () => {
             setLoading(true);
             setError(null);
 
-            // Get current user info first
-            await getCurrentUser();
+            // Get current user info from JWT token
+            const userData = getUserFromJWT();
+            setCurrentUser(userData);
+
+            // Fetch logs using user ID from JWT
+            await fetchLogs(userData.id);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Gagal memuat data pengguna');
             setLoading(false);
         }
     };
 
-    const getCurrentUser = async () => {
+    const getUserFromJWT = (): CurrentUser => {
         try {
-            const userData = await fetcher<CurrentUser>('/api/auth/me');
-            setCurrentUser(userData);
+            // Get JWT token from cookies
+            const cookies = document.cookie.split(';');
+            const tokenCookie = cookies.find(cookie =>
+                cookie.trim().startsWith('authToken=')
+            );
 
-            // Once we have user data, fetch logs
-            await fetchLogs(userData.id);
+            if (!tokenCookie) {
+                throw new Error('Token tidak ditemukan. Silakan login kembali.');
+            }
+
+            const token = tokenCookie.split('=')[1]?.trim();
+            if (!token) {
+                throw new Error('Token tidak valid. Silakan login kembali.');
+            }
+
+            // Decode JWT payload (this is just decoding, not verifying)
+            const payload = JSON.parse(atob(token.split('.')[1])) as JWTPayload;
+
+            // Check if token is expired
+            const currentTime = Math.floor(Date.now() / 1000);
+            if (payload.exp < currentTime) {
+                throw new Error('Token telah kedaluwarsa. Silakan login kembali.');
+            }
+
+            return {
+                id: payload.id,
+                fullName: payload.fullName || 'Unknown User',
+                email: payload.email,
+                role: payload.role
+            };
         } catch (err) {
-            throw new Error('Gagal mendapatkan informasi pengguna');
+            throw new Error(err instanceof Error ? err.message : 'Gagal mendapatkan informasi pengguna dari token');
         }
     };
 
-    const fetchLogs = async (dosenId?: string) => {
+    const fetchLogs = async (dosenId: string) => {
         try {
-            const userId = dosenId || currentUser?.id;
-            if (!userId) {
+            if (!dosenId) {
                 throw new Error('ID pengguna tidak ditemukan');
             }
 
-            const data = await fetcher<Log[]>(`/api/logs/dosen/${userId}`);
+            const data = await fetcher<Log[]>(`/api/logs/dosen/${dosenId}`);
             setLogs(data);
         } catch (err) {
             throw new Error(err instanceof Error ? err.message : 'Gagal mengambil data log');

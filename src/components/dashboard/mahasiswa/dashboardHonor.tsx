@@ -61,6 +61,16 @@ interface CurrentUser {
     nim?: string;
 }
 
+interface JWTPayload {
+    id: string;
+    email: string;
+    role: string;
+    fullName?: string;
+    sub: string;
+    exp: number;
+    iat: number;
+}
+
 const TotalHonorMahasiswa = () => {
     const [logs, setLogs] = useState<Log[]>([]);
     const [honorData, setHonorData] = useState<HonorData[]>([]);
@@ -105,10 +115,47 @@ const TotalHonorMahasiswa = () => {
 
     const getCurrentUser = async () => {
         try {
-            const userData = await fetcher<CurrentUser>('/api/auth/me');
+            const userData = getUserFromJWT();
             setCurrentUser(userData);
         } catch (err) {
             throw new Error('Gagal mendapatkan informasi pengguna');
+        }
+    };
+
+    const getUserFromJWT = (): CurrentUser => {
+        try {
+            // Get JWT token from cookies
+            const cookies = document.cookie.split(';');
+            const tokenCookie = cookies.find(cookie =>
+                cookie.trim().startsWith('authToken=')
+            );
+
+            if (!tokenCookie) {
+                throw new Error('Token tidak ditemukan. Silakan login kembali.');
+            }
+
+            const token = tokenCookie.split('=')[1]?.trim();
+            if (!token) {
+                throw new Error('Token tidak valid. Silakan login kembali.');
+            }
+
+            // Decode JWT payload (this is just decoding, not verifying)
+            const payload = JSON.parse(atob(token.split('.')[1])) as JWTPayload;
+
+            // Check if token is expired
+            const currentTime = Math.floor(Date.now() / 1000);
+            if (payload.exp < currentTime) {
+                throw new Error('Token telah kedaluwarsa. Silakan login kembali.');
+            }
+
+            return {
+                id: payload.id,
+                fullName: payload.fullName || 'Unknown User',
+                email: payload.email,
+                role: payload.role
+            };
+        } catch (err) {
+            throw new Error(err instanceof Error ? err.message : 'Gagal mendapatkan informasi pengguna dari token');
         }
     };
 
