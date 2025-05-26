@@ -83,8 +83,9 @@ export default function ListLowongan({ data }: { data: Lowongan[] }) {
                 const statusData = await response.json();
                 setApplicationStatus(prev => ({
                     ...prev,
-                    [lowonganId]: statusData
+                    [lowonganId]: statusData.data.application_status
                 }));
+                console.log("Application status fetched:", statusData);
             }
         } catch (error) {
             console.error("Error fetching application status:", error);

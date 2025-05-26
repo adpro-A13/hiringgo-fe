@@ -46,9 +46,9 @@ interface ApplicationFormData {
 }
 
 interface DialogDetailLowonganProps {
-  lowongan: Lowongan;
-  onApply?: () => void;
-  applicationStatus?: ApplicationStatus;
+    lowongan: Lowongan;
+    onApply?: (applicationData?: any) => void; // Allow passing data
+    applicationStatus?: ApplicationStatus;
 }
 
 export function DialogDetailLowongan({ lowongan, onApply, applicationStatus }: DialogDetailLowonganProps) {
@@ -101,75 +101,78 @@ export function DialogDetailLowongan({ lowongan, onApply, applicationStatus }: D
     };
     
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        // Additional check to prevent submission if already applied
-        if (localStatus?.hasApplied) {
-            setError("Anda sudah mendaftar untuk lowongan ini");
-            return;
-        }
-        
-        setSubmitting(true);
-        setError(null);
-        setSuccess(null);
+      e.preventDefault();
+      
+      // Additional check to prevent submission if already applied
+      if (localStatus?.hasApplied) {
+          setError("Anda sudah mendaftar untuk lowongan ini");
+          return;
+      }
+      
+      setSubmitting(true);
+      setError(null);
+      setSuccess(null);
 
-        // Client-side validation
-        if (parseFloat(formData.ipk) > 4.0) {
-            setError("IPK maksimal 4.0");
-            setSubmitting(false);
-            return;
-        }
-        
-        if (parseInt(formData.sks) > 24) {
-            setError("SKS maksimal 24");
-            setSubmitting(false);
-            return;
-        }
+      // Client-side validation
+      if (parseFloat(formData.ipk) > 4.0) {
+          setError("IPK maksimal 4.0");
+          setSubmitting(false);
+          return;
+      }
+      
+      if (parseInt(formData.sks) > 24) {
+          setError("SKS maksimal 24");
+          setSubmitting(false);
+          return;
+      }
 
-        try {
-            const token = localStorage.getItem('authToken');
-            
-            const response = await fetch(`/api/lowongandaftar/${lowongan.lowonganId}/daftar`, {
-                method: "POST",
-                body: JSON.stringify({
-                    ipk: parseFloat(formData.ipk),
-                    sks: parseInt(formData.sks)
-                })
-            });
+      try {
+          const token = localStorage.getItem('authToken');
+          
+          const response = await fetch(`/api/lowongandaftar/${lowongan.lowonganId}/daftar`, {
+              method: "POST",
+              body: JSON.stringify({
+                  ipk: parseFloat(formData.ipk),
+                  sks: parseInt(formData.sks)
+              })
+          });
 
-            if (!response.ok) {
-                // Try to parse response as JSON
-                let errorMessage;
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.includes("application/json")) {
-                    const data = await response.json();
-                    errorMessage = data.message || `Error ${response.status}`;
-                } else {
-                    const errorText = await response.text();
-                    errorMessage = errorText || `Error ${response.status}: ${response.statusText}`;
-                }
-                throw new Error(errorMessage);
-            }
+          if (response.ok) {
+              const responseData = await response.json();
+              
+              // Success! Update status
+              setSuccess("Pendaftaran berhasil disubmit!");
+              setFormData({ ipk: "", sks: "" });
+              
+              // Update local status dengan data dari response
+              const newStatus = {
+                  hasApplied: true,
+                  status: "BELUM_DIPROSES",
+                  pendaftaranId: responseData.data.pendaftaran.pendaftaranId
+              };
+              
+              setLocalStatus(newStatus);
+              
+              // Pass the application data to parent
+              if (onApply) {
+                  onApply({
+                      pendaftaranId: responseData.data.pendaftaran.pendaftaranId,
+                      lowonganId: responseData.data.pendaftaran.lowonganId,
+                      status: "BELUM_DIPROSES"
+                  });
+              }
+          } else {
+              const errorData = await response.json();
+              setError(errorData.message || "Gagal mendaftar");
+          }
 
-            // Success! Update status
-            setSuccess("Pendaftaran berhasil disubmit!");
-            setFormData({ ipk: "", sks: "" });
-            
-            // Update local status
-            setLocalStatus({
-                hasApplied: true,
-                status: "MENUNGGU"
-            });
-            
-            if (onApply) onApply();
-
-        } catch (err) {
-            console.error("Failed to submit application:", err);
-            setError(`${err instanceof Error ? err.message : "Unknown error"}`);
-        } finally {
-            setSubmitting(false);
-        }
-    };
+      } catch (err) {
+          console.error("Failed to submit application:", err);
+          setError(`${err instanceof Error ? err.message : "Unknown error"}`);
+      } finally {
+          setSubmitting(false);
+      }
+  };
     
     // Get button label based on status
     const getButtonLabel = () => {
