@@ -46,10 +46,14 @@ const LowonganDetailPage: React.FC = () => {
       const data = await fetcher<LowonganDTO>(`/api/lowongan/${lowonganId}`);
       setLowongan(data);
     } catch (err: any) {
-      console.error("Error fetching lowongan:", err);
-      setError(err.message || 'Failed to load lowongan data');
-      toast.error(`Error: ${err.message || 'Failed to load lowongan data'}`);
-    } finally {
+  console.error("Raw error:", err);
+  console.error("Error accepting applicant:", JSON.stringify(err, null, 2));
+
+  toast.error(`Gagal menerima pendaftar: ${
+    err.message || err.toString() || "Unknown error"
+  }`);
+}
+ finally {
       setLoading(false);
     }
   };

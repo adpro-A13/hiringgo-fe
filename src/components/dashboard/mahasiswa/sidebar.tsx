@@ -32,11 +32,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Link as LinkIcon, Home, LogOut, Loader, List, TowerControlIcon, Loader2 } from "lucide-react";
-import { Fragment, ReactNode, useState } from "react";
-import { usePathname } from "next/navigation";
+import { Link as LinkIcon, Bell, Home, LogOut, Loader, List, BookOpen, Clock, Loader2 } from "lucide-react";
+import { Fragment, ReactNode, useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+import { fetcher } from "@/components/lib/fetcher";
 
 interface SidebarItem {
   title: string;
@@ -50,19 +51,14 @@ interface MahasiswaSidebarProps {
 
 const items = [
   {
-    title: "Mendaftar Lowongan",
-    icon: List,
+    title: "Lowongan",
+    icon: BookOpen,
     url: "/dashboard/mahasiswa/mendaftar-lowongan",
   },
   {
-    title: "Manajemen Log",
-    icon: TowerControlIcon,
-    url: "/dashboard/mahasiswa/manajemen-log",
-  },
-  {
-    title: "Dashboard Honor",
-    icon: TowerControlIcon,
-    url: "/dashboard/mahasiswa/dashboard-honor",
+    title: "Log Activities",
+    icon: Clock,
+    url: "/dashboard/mahasiswa/log-activities",
   },
 ];
 
@@ -70,8 +66,11 @@ export default function MahasiswaSidebar({
   children,
 }: MahasiswaSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [isLoadingCount, setIsLoadingCount] = useState(false);
 
   const pathSegments = pathname.slice(1).split("/");
   const routesList = pathSegments.map((segment, index) => {
@@ -83,6 +82,27 @@ export default function MahasiswaSidebar({
     };
   });
 
+  // Fetch unread notification count
+  const fetchUnreadCount = async () => {
+    setIsLoadingCount(true);
+    try {
+      const count = await fetcher<number>('/api/notifikasi/unread-count');
+      setUnreadCount(count);
+    } catch (error) {
+      console.error('Error fetching notification count:', error);
+    } finally {
+      setIsLoadingCount(false);
+    }
+  };
+
+  // Fetch notification count on load and refresh every minute
+  useEffect(() => {
+    fetchUnreadCount();
+    const intervalId = setInterval(fetchUnreadCount, 60000); // Refresh every minute
+    
+    return () => clearInterval(intervalId);
+  }, []);
+
   // Logout handler
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -93,28 +113,13 @@ export default function MahasiswaSidebar({
     try {
       toast.info("Logging out...");
       
-      // Get token
-      const token = getStoredToken();
-      
-      // Fetch logout endpoint
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        }
+      // Using fetcher instead of direct fetch - it automatically handles auth
+      await fetcher('/api/auth/logout', undefined, {
+        method: 'POST'
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Logout successful:', data.data.message);
-        toast.success(data.data.message || "Logout successful!");
-      } else {
-        console.log('⚠️ Logout API failed, continuing with client-side logout');
-        toast.success("Logged out successfully");
-      }
-
+      
+      toast.success("Logout successful!");
+      
     } catch (error) {
       console.error('❌ Logout error:', error);
       toast.success("Logged out successfully");
@@ -123,31 +128,8 @@ export default function MahasiswaSidebar({
       clearClientAuth();
       setIsLoggingOut(false);
       
-      // Redirect
-      window.location.href = '/login';
+      router.push('/login');
     }
-  };
-
-  const getStoredToken = (): string | null => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('authToken') || 
-             sessionStorage.getItem('authToken') || 
-             getCookieToken();
-    }
-    return null;
-  };
-
-  const getCookieToken = (): string | null => {
-    if (typeof document === 'undefined') return null;
-    
-    const cookies = document.cookie.split(';');
-    for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'authToken' || name === 'token') {
-        return value;
-      }
-    }
-    return null;
   };
 
   const clearClientAuth = (): void => {
@@ -190,6 +172,35 @@ export default function MahasiswaSidebar({
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+
+                {/* Notification Button */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    className={cn(
+                      "hover:bg-gray-200 dark:hover:bg-gray-800",
+                      pathname === "/dashboard/mahasiswa/notifikasi"
+                        ? "bg-gray-200 dark:bg-gray-800"
+                        : ""
+                    )}
+                  >
+                    <Link href="/dashboard/mahasiswa/notifikasi" className="relative">
+                      <Bell />
+                      <span>Notifikasi</span>
+                      {!isLoadingCount && unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      )}
+                      {isLoadingCount && (
+                        <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center">
+                          <Loader2 className="h-3 w-3 animate-spin text-gray-500" />
+                        </span>
+                      )}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                
                 {items.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -243,7 +254,7 @@ export default function MahasiswaSidebar({
                       <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          You will be redirected to the login page and will need to sign in again to access your student dashboard.
+                          You will be redirected to the login page and will need to sign in again to access your account.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
