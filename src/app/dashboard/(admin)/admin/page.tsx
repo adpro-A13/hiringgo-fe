@@ -49,10 +49,6 @@ export default function Admin(){
             
             const response = await fetch("/api/dashboard/admin", {
                 method: "GET", 
-                headers: {
-                    "Authorization": `Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJpZCI6IjMzNjJlY2MyLTgxNDEtNDMwYi05OTA3LTc3Mzc1NDY1MWM4ZCIsImVtYWlsIjoiYWRtaW5AaGlyaW5nZ28uY29tIiwic3ViIjoiYWRtaW5AaGlyaW5nZ28uY29tIiwiaWF0IjoxNzQ4MDc3NTEwLCJleHAiOjE3NDgwODExMTB9.5m5YdNb8sZu956fVgMw3JxVzD8b6DIRgB35-8S84t1Q`,
-                    "Content-Type": "application/json"
-                }
             });
 
             if (!response.ok) {
