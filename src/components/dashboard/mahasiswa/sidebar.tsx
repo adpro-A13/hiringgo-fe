@@ -60,6 +60,11 @@ const items = [
     icon: Clock,
     url: "/dashboard/mahasiswa/manajemen-log",
   },
+  {
+    title: "Dashboard Honor",
+    icon: List,
+    url: "/dashboard/mahasiswa/dashboard-honor",
+  },
 ];
 
 export default function MahasiswaSidebar({
