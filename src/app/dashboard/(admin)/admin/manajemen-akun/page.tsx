@@ -440,22 +440,47 @@ export default function ManajemenAkun() {
                                     type="submit"
                                     variant="destructive"
                                     disabled={isSubmitting}
+                                    onClick={(e) => {
+                                    // For delete operations, handle it immediately instead of relying on form submission
+                                    if (dialogType === "delete" && selectedUser) {
+                                        e.preventDefault(); // Prevent normal form submission
+                                        
+                                        (async () => {
+                                        try {
+                                            console.log(`Deleting user with ID: ${selectedUser.id}`);
+                                            const deleteUrl = `/api/admin/accounts/${selectedUser.id}`;
+                                            await fetcher(deleteUrl, undefined, {
+                                            method: "DELETE"
+                                            });
+
+                                            toast.success("User deleted successfully");
+                                            await fetchUsers();
+                                            setOpenDialog(false);
+                                        } catch (error: any) {
+                                            console.error("Error deleting user:", error);
+                                            if (error.status === 403) {
+                                            toast.error("You cannot delete your own account or a protected admin account.");
+                                            } else {
+                                            toast.error(`Failed to delete user: ${error.message || 'Unknown error'}`);
+                                            }
+                                        }
+                                        })();
+                                    }
+                                    }}
                                 >
                                     {isSubmitting ? "Processing..." : "Delete User"}
                                 </Button>
-                            ) : (
+                                ) : (
                                 <Button
                                     type="submit"
                                     variant={dialogType === "edit" ? "default" : "secondary"}
                                     disabled={isSubmitting}
                                 >
                                     {isSubmitting ? "Processing..." : dialogType === "add"
-                                        ? "Add User"
-                                        : dialogType === "edit"
-                                            ? "Save Changes"
-                                            : "Delete User"}
+                                    ? "Add User"
+                                    : "Save Changes"}
                                 </Button>
-                            )}
+                                )}
                         </DialogFooter>
                     </form>
                 </DialogContent>
