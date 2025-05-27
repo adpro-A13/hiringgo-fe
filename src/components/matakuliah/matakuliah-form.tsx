@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { X, Plus, AlertCircle } from "lucide-react";
+import { fetcher } from "@/components/lib/fetcher";
+import { toast } from "sonner";
 
 interface MataKuliah {
   kode: string;
@@ -20,6 +22,13 @@ interface MataKuliah {
 interface MataKuliahFormProps {
   MataKuliah?: MataKuliah;
   onSuccess: () => void;
+}
+
+interface ApiResponse {
+  success?: boolean;
+  message?: string;
+  error?: string;
+  data?: any;
 }
 
 export default function MataKuliahForm({
@@ -49,56 +58,45 @@ export default function MataKuliahForm({
         : "/api/matakuliah/create";
       const method = isEdit ? "PUT" : "POST";
 
-      const res = await fetch(url, {
+      // Using fetcher instead of direct fetch with token
+      await fetcher<ApiResponse>(url, undefined, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token") ?? ""}`,
-        },
         body: JSON.stringify(formData),
       });
-
-      if (!res.ok) {
-        let errorMessage = `Gagal ${isEdit ? "memperbarui" : "membuat"} mata kuliah`;
-
-        try {
-          const errorData = await res.json();
-          errorMessage = errorData.message || errorData.error || errorMessage;
-        } catch {
-          try {
-            const errorText = await res.text();
-            if (errorText) errorMessage = errorText;
-          } catch {}
-        }
-
-        if (res.status === 404) {
-          setError(
-            errorMessage.includes("tidak ditemukan") || errorMessage.includes("not found")
-              ? errorMessage
-              : "Email dosen tidak ditemukan di database"
-          );
-        } else if (res.status === 409) {
-          setError(
-            errorMessage.includes("kode sudah digunakan") || errorMessage.includes("already exists")
-              ? "Mata kuliah dengan kode ini sudah ada"
-              : errorMessage
-          );
-        } else {
-          setError(errorMessage);
-        }
-
-        return;
-      }
-
+      
+      toast.success(`Mata kuliah berhasil ${isEdit ? "diperbarui" : "dibuat"}`);
       setError("");
       onSuccess();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error submitting form:", err);
-      setError(
-        `Terjadi kesalahan: ${
-          err instanceof Error ? err.message : "Unknown error"
-        }`
-      );
+      
+      // Check for specific error statuses
+      if (err.status === 401) {
+        toast.error("Sesi Anda telah berakhir. Silakan login kembali");
+        setError("Sesi Anda telah berakhir. Silakan login kembali");
+        return;
+      }
+      
+      let errorMessage = `Gagal ${isEdit ? "memperbarui" : "membuat"} mata kuliah`;
+      
+      if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      if (err.status === 404) {
+        errorMessage = errorMessage.includes("tidak ditemukan") || 
+                      errorMessage.includes("not found")
+          ? errorMessage
+          : "Email dosen tidak ditemukan di database";
+      } else if (err.status === 409) {
+        errorMessage = errorMessage.includes("kode sudah digunakan") || 
+                      errorMessage.includes("already exists")
+          ? "Mata kuliah dengan kode ini sudah ada"
+          : errorMessage;
+      }
+      
+      toast.error(errorMessage);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
