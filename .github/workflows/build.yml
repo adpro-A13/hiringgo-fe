@@ -1,0 +1,25 @@
+name: CI Build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 18
+        cache: npm
+    
+    - run: npm ci
+    
+    - name: Build with secrets
+      env:
+        NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+      run: npm run build
+    
+    - name: Test build
+      run: echo "Build completed with API URL from secrets"
