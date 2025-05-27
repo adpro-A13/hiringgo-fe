@@ -39,20 +39,30 @@ interface ApplicationStatus {
     pendaftaranId?: string;
 }
 
+interface ListLowonganProps {
+    data: Lowongan[];
+    applicationStatuses?: {[key: string]: ApplicationStatus};
+    onApplicationUpdate?: (lowonganId: string, application: any) => void;
+}
+
 const DialogDetailLowongan = dynamic(() => import("../dashboard/mahasiswa/dialogDetailLowongan").then((mod) => mod.DialogDetailLowongan))
 
-export default function ListLowongan({ data }: { data: Lowongan[] }) {
+export default function ListLowongan({ data, applicationStatuses = {}, onApplicationUpdate }: ListLowonganProps) {
     const [lowonganBySemester, setLowonganBySemester] = useState<{
         [key: string]: Lowongan[];
     }>({});
     
-    const [applicationStatus, setApplicationStatus] = useState<{
+    // Remove local state management since we're receiving from parent
+    const [localApplicationStatus, setLocalApplicationStatus] = useState<{
         [key: string]: ApplicationStatus;
     }>({});
     
     const [loadingStatus, setLoadingStatus] = useState<{
         [key: string]: boolean;
     }>({});
+
+    // Merge parent status with local status
+    const mergedApplicationStatus = { ...applicationStatuses, ...localApplicationStatus };
 
     useEffect(() => {
         const grouped = data.reduce((acc, lowongan) => {
@@ -66,11 +76,13 @@ export default function ListLowongan({ data }: { data: Lowongan[] }) {
 
         setLowonganBySemester(grouped);
         
-        // Fetch application status for each lowongan
+        // Only fetch status for lowongan that don't have status from parent
         data.forEach(lowongan => {
-            fetchApplicationStatus(lowongan.lowonganId);
+            if (!applicationStatuses[lowongan.lowonganId]) {
+                fetchApplicationStatus(lowongan.lowonganId);
+            }
         });
-    }, [data]);
+    }, [data, applicationStatuses]);
     
     const fetchApplicationStatus = async (lowonganId: string) => {
         try {
@@ -80,30 +92,57 @@ export default function ListLowongan({ data }: { data: Lowongan[] }) {
                 method: "GET",
             });
             
-            setApplicationStatus(prev => ({
+            const status = statusData.data?.application_status || statusData.application_status || statusData;
+            
+            setLocalApplicationStatus(prev => ({
                 ...prev,
-                [lowonganId]: statusData.data?.application_status || statusData.application_status
+                [lowonganId]: status
             }));
-            console.log("Application status fetched:", statusData);
+            
+            console.log("Application status fetched:", status);
         } catch (error: any) {
             console.error("Error fetching application status:", error);
-            // Don't show error toast for status checks as it's not critical
+            // Set default status on error
+            setLocalApplicationStatus(prev => ({
+                ...prev,
+                [lowonganId]: { hasApplied: false, status: "BELUM_MENDAFTAR" }
+            }));
         } finally {
             setLoadingStatus(prev => ({ ...prev, [lowonganId]: false }));
         }
     };
 
-    const handleApply = (lowongan: Lowongan) => {
-        sonnerToast.success("Pendaftaran berhasil", {
-            description: `Anda telah mendaftar untuk lowongan ${lowongan.namaMataKuliah}`,
-            duration: 3000
-        });
+    const handleApply = (application: any) => {
+        // Extract lowonganId from application data
+        const lowonganId = application?.lowonganId;
         
-        fetchApplicationStatus(lowongan.lowonganId);
+        if (lowonganId) {
+            sonnerToast.success("Pendaftaran berhasil", {
+                description: `Pendaftaran Anda telah berhasil disubmit`,
+                duration: 3000
+            });
+            
+            // Update local status immediately
+            const newStatus: ApplicationStatus = {
+                hasApplied: true,
+                status: "BELUM_DIPROSES",
+                pendaftaranId: application?.pendaftaranId
+            };
+            
+            setLocalApplicationStatus(prev => ({
+                ...prev,
+                [lowonganId]: newStatus
+            }));
+            
+            // Notify parent component
+            if (onApplicationUpdate) {
+                onApplicationUpdate(lowonganId, application);
+            }
+        }
     };
     
     const getStatusBadge = (lowonganId: string) => {
-        const status = applicationStatus[lowonganId];
+        const status = mergedApplicationStatus[lowonganId];
         
         if (loadingStatus[lowonganId]) {
             return <Loader2 className="h-4 w-4 animate-spin" />;
@@ -115,11 +154,13 @@ export default function ListLowongan({ data }: { data: Lowongan[] }) {
         
         switch (status.status) {
             case "DITERIMA":
-                return <Badge className="bg-green-100 text-green-800">Diterima</Badge>;
+                return <Badge className="bg-green-100 text-green-800 border-green-200">Diterima</Badge>;
             case "DITOLAK":
-                return <Badge className="bg-red-100 text-red-800">Ditolak</Badge>;
+                return <Badge className="bg-red-100 text-red-800 border-red-200">Ditolak</Badge>;
             case "MENUNGGU":
-                return <Badge className="bg-yellow-100 text-yellow-800">Menunggu</Badge>;
+                return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Menunggu</Badge>;
+            case "BELUM_DIPROSES":
+                return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Belum Diproses</Badge>;
             default:
                 return <Badge variant="outline">{status.status}</Badge>;
         }
@@ -177,8 +218,8 @@ export default function ListLowongan({ data }: { data: Lowongan[] }) {
                                             <TableCell className="text-center">
                                                 <DialogDetailLowongan 
                                                     lowongan={lowongan} 
-                                                    onApply={() => handleApply(lowongan)}
-                                                    applicationStatus={applicationStatus[lowongan.lowonganId]} 
+                                                    onApply={handleApply}
+                                                    applicationStatus={mergedApplicationStatus[lowongan.lowonganId]} 
                                                 />
                                                 
                                                 {loadingStatus[lowongan.lowonganId] && (
