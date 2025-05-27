@@ -36,33 +36,26 @@ async function handleApiRequest(
     method: string,
     pathSegments: string[]
 ) {
-    // Combine the path segments to form the backend API path
     const apiPath = pathSegments ? pathSegments.join('/') : '';
 
-    // Use HTTP for the backend URL (not HTTPS)
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://34.206.227.118';
 
-    // 🔧 FIX: Extract and forward query parameters
     const { searchParams } = new URL(request.url);
     const queryString = searchParams.toString();
     
-    // Create the full URL for the backend request WITH query parameters
     const url = queryString 
         ? `${backendUrl}/api/${apiPath}?${queryString}`
         : `${backendUrl}/api/${apiPath}`;
 
     console.log(`API Gateway: Forwarding ${method} request to ${url}`);
     
-    // 🐛 Enhanced logging for debugging
     if (queryString) {
         console.log(`API Gateway: Query parameters: ${queryString}`);
         console.log(`API Gateway: Parsed params:`, Object.fromEntries(searchParams.entries()));
     }
 
-    // Extract the authorization header from the incoming request
     let authHeader = request.headers.get('authorization');
 
-    // If no Authorization header is found, check for the authToken cookie
     if (!authHeader) {
         const authToken = request.cookies.get('authToken')?.value;
         if (authToken) {
@@ -75,26 +68,22 @@ async function handleApiRequest(
         console.log('API Gateway: Using auth token from Authorization header');
     }
 
-    // Create headers for the backend request
     const headers = new Headers();
     if (authHeader) {
         headers.set('Authorization', authHeader);
     }
     headers.set('Content-Type', 'application/json');
 
-    // Get the request body if it exists
     let body = null;
     if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
         try {
             body = await request.json();
         } catch (e) {
-            // Handle case where body is not JSON or empty
             console.log('API Gateway: Request body is empty or not JSON');
         }
     }
     
     try {
-        // Forward the request to the backend
         console.log(`Making fetch request to: ${url}`);
         console.log(`Method: ${method}`);
         console.log(`Headers: ${JSON.stringify(Object.fromEntries(headers.entries()))}`);
@@ -108,7 +97,6 @@ async function handleApiRequest(
 
         console.log(`Backend response status: ${backendResponse.status}`);
 
-        // Handle non-JSON responses
         const contentType = backendResponse.headers.get('content-type');
         let data;
 
@@ -116,7 +104,6 @@ async function handleApiRequest(
             if (contentType && contentType.includes('application/json')) {
                 data = await backendResponse.json();
                 
-                // 🐛 Enhanced logging for debugging responses
                 if (Array.isArray(data)) {
                     console.log(`API Gateway: Received ${data.length} items from backend`);
                     if (data.length > 0 && data[0].jumlahAsdosDibutuhkan !== undefined) {
@@ -134,11 +121,10 @@ async function handleApiRequest(
             data = {
                 message: 'Error parsing response',
                 error: parseError instanceof Error ? parseError.message : String(parseError),
-                responseText: text.substring(0, 500) // Include first 500 chars of response
+                responseText: text.substring(0, 500) 
             };
         }
 
-        // Return the response with appropriate status and headers
         return NextResponse.json(data, {
             status: backendResponse.status,
             headers: {
@@ -150,7 +136,6 @@ async function handleApiRequest(
     } catch (error) {
         console.error('Error forwarding request to backend:', error);
 
-        // Provide more detailed error information
         let errorMessage = 'Failed to connect to backend service';
         let errorDetails = '';
 
