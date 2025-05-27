@@ -40,7 +40,7 @@ async function handleApiRequest(
     const apiPath = pathSegments ? pathSegments.join('/') : '';
 
     // Use HTTP for the backend URL (not HTTPS)
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://34.206.227.118';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL;
 
     // 🔧 FIX: Extract and forward query parameters
     const { searchParams } = new URL(request.url);
