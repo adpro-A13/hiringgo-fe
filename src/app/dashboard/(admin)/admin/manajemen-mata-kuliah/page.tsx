@@ -139,7 +139,7 @@ export default function ManajemenMataKuliah() {
     setIsDeleting(true)
     try {
       // Use fetcher instead of direct fetch with token
-      await fetcher(`/api/matakuliah/${MataKuliahToDelete.kode}`, undefined, {
+      await fetcher(`/api/matakuliah/delete/${MataKuliahToDelete.kode}`, undefined, {
         method: "DELETE",
       })
 
