@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { fetcher } from "@/components/lib/fetcher";
 import MahasiswaSidebar from "@/components/dashboard/mahasiswa/sidebar";
-import { Loader2, Bell, CheckCheck, BookOpen, Calendar, Tag } from "lucide-react";
+import { Loader2, Bell, CheckCheck, BookOpen, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -102,7 +102,7 @@ export default function NotifikasiPage() {
     const statusLower = status.toLowerCase();
     if (statusLower.includes('diterima')) return "bg-green-100 text-green-800";
     if (statusLower.includes('ditolak')) return "bg-red-100 text-red-800";
-    if (statusLower.includes('menunggu')) return "bg-yellow-100 text-yellow-800";
+    if (statusLower.includes('belum_diproses')) return "bg-yellow-100 text-yellow-800";
     if (statusLower.includes('buka')) return "bg-blue-100 text-blue-800";
     if (statusLower.includes('tutup')) return "bg-gray-100 text-gray-800";
     return "bg-gray-100 text-gray-800";
@@ -140,15 +140,7 @@ export default function NotifikasiPage() {
               Refresh
             </button>
             
-            {unreadCount > 0 && (
-              <button
-                onClick={() => toast.info("Fungsi mark all as read belum tersedia")}
-                className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-md text-sm flex items-center hover:bg-blue-100"
-              >
-                <CheckCheck className="h-4 w-4 mr-2" />
-                Tandai Semua Dibaca
-              </button>
-            )}
+            {/* "Mark All as Read" button removed as requested */}
           </div>
         </div>
         

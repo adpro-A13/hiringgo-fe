@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 type Semester = 'GENAP' | 'GANJIL';
-type StatusLowongan = 'TERSEDIA' | 'TIDAK_TERSEDIA';
+type StatusLowongan = 'DIBUKA' | 'DITUTUP';
 
 interface LowonganDTO {
   lowonganId: string;
@@ -210,8 +210,8 @@ export default function LowonganList() {
               disabled={loading}
             >
               <option value="">-- Pilih Status --</option>
-              <option value="TERSEDIA">TERSEDIA</option>
-              <option value="TIDAK_TERSEDIA">TIDAK_TERSEDIA</option>
+              <option value="DIBUKA">DIBUKA</option>
+              <option value="DITUTUP">DITUTUP</option>
             </select>
           )}
         </div>
@@ -237,6 +237,7 @@ export default function LowonganList() {
                 <th className="border px-4 py-2 text-left">Semester</th>
                 <th className="border px-4 py-2 text-left">Status</th>
                 <th className="border px-4 py-2 text-left">Dibutuhkan</th>
+                <th className="border px-4 py-2 text-left">Pendaftar</th>
                 <th className="border px-4 py-2 text-left">Diterima</th>
                 <th className="border px-4 py-2 text-left">Aksi</th>
               </tr>
@@ -256,7 +257,7 @@ export default function LowonganList() {
                   </td>
                   <td className="border px-4 py-2">
                     <span className={`px-2 py-1 rounded text-xs ${
-                      lowongan.statusLowongan === 'TERSEDIA' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      lowongan.statusLowongan === 'DIBUKA' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                     }`}>
                       {lowongan.statusLowongan}
                     </span>
@@ -266,7 +267,16 @@ export default function LowonganList() {
                       {lowongan.jumlahAsdosDibutuhkan}
                     </span>
                   </td>
-                  <td className="border px-4 py-2">{lowongan.jumlahAsdosDiterima}</td>
+                  <td className="border px-4 py-2">
+                    <span className="font-medium text-lg text-purple-600">
+                      {lowongan.jumlahAsdosPendaftar}
+                    </span>
+                  </td>
+                  <td className="border px-4 py-2">
+                    <span className="font-medium text-lg text-green-600">
+                      {lowongan.jumlahAsdosDiterima}
+                    </span>
+                  </td>
                   <td className="border px-4 py-2">
                     <div className="flex gap-2">
                       <button

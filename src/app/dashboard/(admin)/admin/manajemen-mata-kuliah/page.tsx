@@ -19,6 +19,9 @@ import { Plus, Search, Edit, Trash2, Eye, BookOpen, AlertTriangle, CheckCircle, 
 import AdminSidebar from "@/components/dashboard/admin/sidebar"
 import MataKuliahForm from "@/components/matakuliah/matakuliah-form"
 import MataKuliahDetail from "@/components/matakuliah/matakuliah-detail"
+import { fetcher } from "@/components/lib/fetcher"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 interface MataKuliah {
   kode: string
@@ -40,6 +43,7 @@ export default function ManajemenMataKuliah() {
   const [MataKuliahToDelete, setMataKuliahToDelete] = useState<MataKuliah | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null)
+  const router = useRouter()
 
   const showMessage = (type: "success" | "error" | "info", text: string) => {
     setMessage({ type, text })
@@ -49,16 +53,19 @@ export default function ManajemenMataKuliah() {
   const fetchMataKuliahs = async () => {
     try {
       setLoading(true)
-      const res = await fetch("/api/matakuliah/getAll", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token") ?? ""}`,
-        },
-      })
-      const data: MataKuliah[] = await res.json()
+      // Use fetcher instead of direct fetch with token
+      const data = await fetcher<MataKuliah[]>("/api/matakuliah/getAll")
       setMataKuliahs(data)
       setFilteredMataKuliahs(data)
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching MataKuliahs:", err)
+      
+      // Check for authentication error
+      if (err.status === 401) {
+        toast.error("Sesi Anda telah berakhir. Silakan login kembali")
+        router.push("/login")
+        return
+      }
 
       // For demo purposes, using mock data
       const mockData: MataKuliah[] = [
@@ -131,18 +138,12 @@ export default function ManajemenMataKuliah() {
 
     setIsDeleting(true)
     try {
-      const res = await fetch(`/api/matakuliah/${MataKuliahToDelete.kode}`, {
+      // Use fetcher instead of direct fetch with token
+      await fetcher(`/api/matakuliah/${MataKuliahToDelete.kode}`, undefined, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token") ?? ""}`,
-        },
       })
 
-      if (!res.ok && res.status !== 404) {
-        throw new Error("Failed to delete MataKuliah")
-      }
-
-      // For demo purposes, remove from local state
+      // Update local state after successful API call
       const updatedMataKuliahs = MataKuliahs.filter((MataKuliah) => MataKuliah.kode !== MataKuliahToDelete.kode)
       setMataKuliahs(updatedMataKuliahs)
       setFilteredMataKuliahs(updatedMataKuliahs)
@@ -150,11 +151,17 @@ export default function ManajemenMataKuliah() {
       showMessage("success", "Mata kuliah berhasil dihapus")
       setIsDeleteDialogOpen(false)
       setMataKuliahToDelete(null)
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error deleting MataKuliah:", err)
+      
+      if (err.status === 401) {
+        toast.error("Sesi Anda telah berakhir. Silakan login kembali")
+        router.push("/login")
+        return
+      }
 
       // For demo purposes, still remove from local state
-      const updatedMataKuliahs = MataKuliahs.filter((MataKuliah) => MataKuliah.kode !== MataKuliahToDelete.kode)
+      const updatedMataKuliahs = MataKuliahs.filter((MataKuliah) => MataKuliah.kode !== MataKuliahToDelete?.kode)
       setMataKuliahs(updatedMataKuliahs)
       setFilteredMataKuliahs(updatedMataKuliahs)
 
