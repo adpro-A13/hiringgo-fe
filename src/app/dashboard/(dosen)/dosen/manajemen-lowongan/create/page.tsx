@@ -102,7 +102,6 @@ export default function CreateLowonganPage() {
             >
               <option value="GANJIL">Ganjil</option>
               <option value="GENAP">Genap</option>
-              <option value="PENDEK">Pendek</option>
             </select>
           </div>
 
